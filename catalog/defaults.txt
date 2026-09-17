@@ -39,3 +39,4 @@ nwg-look
 gthumb
 papers
 mpv
+lollypop
