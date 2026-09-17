@@ -12,6 +12,10 @@ telemetry_enabled = false
     [shell.greeter_sync]
     auto_sync = true
 
+    [shell.keyboard_layout.custom_labels]
+    "English (US)" = "English"
+    Persian = "Persian"
+
 [theme]
 mode = "dark"
 source = "wallpaper"           # colors generated from the wallpaper
@@ -22,6 +26,8 @@ wallpaper_scheme = "vibrant"
 
     [theme.templates]
     builtin_ids = [ "btop", "ghostty", "gtk3", "gtk4", "kcolorscheme", "niri", "qt", "starship" ]
+    # Fetched from api.noctalia.dev the first time the theme changes online.
+    community_ids = [ "claude-code", "pywalfox" ]
 
 [wallpaper]
 directory = "/usr/share/backgrounds/voidbleed"
@@ -47,8 +53,8 @@ margin_ends = 0
 radius_top_left = 0
 radius_top_right = 0
 start = [ "control-center", "launcher", "wallpaper", "workspaces" ]
+center = [ "media", "clock" ]
 end = [
-    "media",
     "tray",
     "notifications",
     "clipboard",
@@ -60,11 +66,14 @@ end = [
     "session"
 ]
 
+[widget.clock]
+format = "🕓 {:%H:%M — 📅 %A — 🗓️ %Y/%m/%d}"
+
 [widget.control-center]
 capsule = true
 color = "primary"
-glyph = "droplet"
-scale = 1.45
+custom_image = "/usr/share/pixmaps/voidbleed-logo.png"
+scale = 1.8
 
 [widget.session]
 capsule = true
