@@ -1,0 +1,19 @@
+# Template file for 'voidbleed-config'
+# files/overlay is staged from overlays/system and files/keys from packages/keys
+# by scripts/build-packages.sh.
+pkgname=voidbleed-config
+version=20260916
+revision=3
+depends="base-files shadow sudo fish-shell"
+short_desc="Voidbleed system configuration and branding"
+maintainer="@MAINTAINER@"
+license="Public Domain"
+homepage="@HOMEPAGE@"
+
+do_install() {
+	vcopy "${FILESDIR}/overlay/*" /
+	chmod 0750 "${DESTDIR}/etc/sudoers.d"
+	chmod 0440 "${DESTDIR}/etc/sudoers.d/wheel"
+	vmkdir var/db/xbps/keys
+	vcopy "${FILESDIR}/keys/*.plist" var/db/xbps/keys
+}

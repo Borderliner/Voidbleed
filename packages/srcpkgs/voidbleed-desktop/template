@@ -1,0 +1,43 @@
+# Template file for 'voidbleed-desktop'
+pkgname=voidbleed-desktop
+version=20260916
+revision=1
+metapackage=yes
+short_desc="Voidbleed desktop meta package (niri + Noctalia)"
+maintainer="@MAINTAINER@"
+license="Public Domain"
+homepage="@HOMEPAGE@"
+
+# BEGIN generated from catalog/desktop.txt by scripts/catalog.py sync-templates
+depends="
+ voidbleed-base
+ voidbleed-desktop-config
+ niri
+ xwayland-satellite
+ noctalia
+ noctalia-greeter
+ greetd
+ gnome-keyring
+ pinentry-gnome
+ xdg-desktop-portal
+ xdg-desktop-portal-gtk
+ xdg-desktop-portal-gnome
+ xdg-user-dirs
+ upower
+ mesa-dri
+ vulkan-loader
+ qt6-wayland
+ qt6ct
+ ghostty
+ ghostty-terminfo
+ wl-clipboard
+ wl-mirror
+ jq
+ adw-gtk-theme
+ papirus-icon-theme
+ xcursor-vanilla-dmz
+ ttf-ubuntu-font-family
+ noto-fonts-ttf
+ noto-fonts-emoji
+"
+# END generated

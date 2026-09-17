@@ -1,0 +1,13 @@
+# base-files owns /usr/lib/os-release; 05-voidbleed-noextract.conf stops later
+# base-files updates from restoring Void's copy after we write ours.
+case "${ACTION}" in
+post)
+	cp -f usr/share/voidbleed/os-release usr/lib/os-release
+
+	# New users get fish as their login shell. Only replace Void's stock
+	# default so an administrator's own choice survives package updates.
+	if [ -x usr/bin/fish ] && [ -f etc/default/useradd ]; then
+		sed -i 's|^SHELL=/bin/bash$|SHELL=/usr/bin/fish|' etc/default/useradd
+	fi
+	;;
+esac

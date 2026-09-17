@@ -1,0 +1,33 @@
+# Template file for 'voidbleed-base'
+pkgname=voidbleed-base
+version=20260916
+revision=2
+metapackage=yes
+short_desc="Voidbleed base system meta package"
+maintainer="@MAINTAINER@"
+license="Public Domain"
+homepage="@HOMEPAGE@"
+
+# BEGIN generated from catalog/base.txt by scripts/catalog.py sync-templates
+depends="
+ voidbleed-config
+ base-system
+ linux6.18
+ linux-base
+ void-repo-nonfree
+ grub-x86_64-efi
+ cryptsetup
+ sudo
+ vpm
+ NetworkManager
+ chrony
+ dbus
+ elogind
+ polkit
+ pipewire
+ wireplumber
+ alsa-pipewire
+ libjack-pipewire
+ fish-shell
+"
+# END generated

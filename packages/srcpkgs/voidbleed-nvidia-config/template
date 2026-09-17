@@ -1,0 +1,14 @@
+# Template file for 'voidbleed-nvidia-config'
+# files/overlay is staged from overlays/nvidia by scripts/build-packages.sh.
+# The installer adds this package together with the NVIDIA driver it detects.
+pkgname=voidbleed-nvidia-config
+version=20260916
+revision=1
+short_desc="Voidbleed NVIDIA settings for niri (modeset, VRAM heap fix)"
+maintainer="@MAINTAINER@"
+license="Public Domain"
+homepage="@HOMEPAGE@"
+
+do_install() {
+	vcopy "${FILESDIR}/overlay/*" /
+}

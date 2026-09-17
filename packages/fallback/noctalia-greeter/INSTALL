@@ -1,0 +1,9 @@
+# Create greeter.toml/sync.toml owned by the greetd user. The upstream PAM
+# patch is not needed on Void: system-login already runs pam_elogind.
+case "${ACTION}" in
+post)
+	if [ "$(id -u)" = 0 ] && [ -x usr/bin/noctalia-greeter-apply-appearance ]; then
+		GREETER_USER=_greeter usr/bin/noctalia-greeter-apply-appearance --setup-system || :
+	fi
+	;;
+esac

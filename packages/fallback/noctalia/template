@@ -1,0 +1,36 @@
+# Template file for 'noctalia'
+# Based on the Voiders Community template (MIT), see packages/fallback/NOTICE.md.
+pkgname=noctalia
+version=5.1.0
+revision=1
+build_style=meson
+build_helper=qemu
+hostmakedepends="pkg-config wayland-devel"
+makedepends="basu-devel cairo-devel fontconfig-devel freetype-devel harfbuzz-devel
+	jemalloc-devel json-c++ libcurl-devel libepoxy-devel libglvnd-devel libmd4c-devel
+	libqalculate-devel librsvg-devel libsodium-devel libwebp-devel libxkbcommon-devel
+	libxml2-devel libsecret-devel libjxl-devel MesaLib-devel pam-devel pango-devel
+	libsndfile-devel pipewire-devel polkit-devel sdbus-c++-devel stb tomlplusplus-devel
+	libical-devel wayland-devel wayland-protocols wireplumber-devel"
+depends="git"
+short_desc="Sleek, customizable desktop shell crafted for Wayland"
+maintainer="@MAINTAINER@"
+license="MIT"
+homepage="https://noctalia.dev"
+changelog="https://github.com/noctalia-dev/noctalia/releases/tag/v${version}"
+distfiles="https://github.com/noctalia-dev/noctalia/archive/refs/tags/v${version}.tar.gz"
+checksum=fcf37d99ecb6093b38df8f0d6a18012f518895cd8d3934fd16164a7d0b7b3062
+
+# Tests appear to be not reliable in a sandboxed build
+# Expected fixes in next few releases
+make_check=no
+
+post_install() {
+	vlicense LICENSE
+	vsconf example.toml
+
+	for shell in bash fish zsh; do
+		vtargetrun ${DESTDIR}/usr/bin/noctalia completions ${shell} > noctalia.${shell}
+		vcompletion noctalia.${shell} ${shell}
+	done
+}

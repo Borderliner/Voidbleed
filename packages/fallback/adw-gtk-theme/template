@@ -1,0 +1,16 @@
+# Template file for 'adw-gtk-theme'
+# Based on the Voiders Community template (MIT), see packages/fallback/NOTICE.md.
+pkgname=adw-gtk-theme
+version=6.5
+revision=1
+short_desc="Unofficial GTK 3 port of the libadwaita theme"
+maintainer="@MAINTAINER@"
+license="LGPL-2.1-only"
+homepage="https://github.com/lassekongo83/adw-gtk3"
+distfiles="${homepage}/releases/download/v${version}/adw-gtk3v${version}.tar.xz"
+checksum=a81780fadfc432be0fc3d89c4ebb41aa28e4f032d42c36f9789c57dd10cfa41c
+
+do_install() {
+ vmkdir usr/share/themes
+ vcopy . usr/share/themes/
+}

@@ -1,0 +1,29 @@
+case "${ACTION}" in
+post)
+	# Exists from the first login so fish's fish_add_path puts it on PATH
+	# (xbps-src drops empty directories from packages, so create it here).
+	install -d -m 0755 etc/skel/.local/bin
+
+	# Point greetd at the Noctalia greeter, unless it already is.
+	if ! grep -qs noctalia-greeter-session etc/greetd/config.toml; then
+		[ -f etc/greetd/config.toml ] &&
+			cp -p etc/greetd/config.toml etc/greetd/config.toml.voidbleed-backup
+		install -m 0644 usr/share/voidbleed/greetd/config.toml etc/greetd/config.toml
+	fi
+
+	# First-run greeter setup (greeter.toml/sync.toml owned by _greeter). The
+	# upstream PAM patch is not needed on Void: system-login runs pam_elogind.
+	install -d -m 0750 var/lib/noctalia-greeter
+	if [ "$(id -u)" = 0 ] && [ -x usr/bin/noctalia-greeter-apply-appearance ]; then
+		GREETER_USER=_greeter usr/bin/noctalia-greeter-apply-appearance --setup-system || :
+	fi
+
+	# Give the login screen the Voidbleed palette until a user's theme syncs.
+	if ! grep -qs '^[[:space:]]*\[appearance\.palette\]' var/lib/noctalia-greeter/sync.toml; then
+		install -m 0644 usr/share/voidbleed/greeter/sync.toml var/lib/noctalia-greeter/sync.toml
+	fi
+	if [ "$(id -u)" = 0 ]; then
+		chown -R _greeter:_greeter var/lib/noctalia-greeter || :
+	fi
+	;;
+esac
