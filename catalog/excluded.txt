@@ -1,0 +1,34 @@
+# Packages from the reference machine that are NOT in base.txt or desktop.txt.
+# Format: package  <tab>  where it went / why.
+# scripts/catalog.py drift reads the first column, so any package listed here
+# stops being reported as untracked.
+
+nvidia580	optional.toml: gpu-nvidia580 (chosen in the installer)
+intel-media-driver	optional.toml: gpu-intel
+libvdpau-va-gl	optional.toml: gpu-intel
+intel-ucode	optional.toml: microcode-intel
+bluez	optional.toml: bluetooth
+libspa-bluetooth	optional.toml: bluetooth
+power-profiles-daemon	optional.toml: power-ppd
+tlp	optional.toml: power-tlp (mutually exclusive with power-ppd)
+cups	optional.toml: printing
+cups-filters	optional.toml: printing
+flatpak	optional.toml: flatpak
+firefox	optional.toml: firefox
+mpvpaper	optional.toml: video-wallpaper
+steam-udev-rules	optional.toml: steam
+noto-fonts-cjk	optional.toml: fonts-cjk
+font-vazirmatn	optional.toml: fonts-arabic-script
+foot	replaced by ghostty
+bluez-alsa	dropped: conflicts with PipeWire's own Bluetooth audio
+opendoas	dropped: Voidbleed uses sudo
+grub-i386-efi	dropped: amd64-only, 64-bit UEFI
+void-live-audio	live ISO only (phase 3)
+dialog	dropped: old void-installer dependency; replaced by the Voidbleed TUI
+lvm2	installer adds it only for LVM layouts (phase 4)
+mdadm	installer adds it only for RAID layouts (phase 4)
+binutils	dropped: build tool; dkms pulls what it needs
+glxinfo	dropped: diagnostic tool, install on demand
+linux	already pulled in by base-system
+paper-icon-theme	replaced by papirus-icon-theme
+uv	personal developer tool

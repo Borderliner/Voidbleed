@@ -1,0 +1,10 @@
+# Runit services enabled on every install (linked into /var/service).
+# Hardware-dependent services live in optional.toml.
+# Do not enable dhcpcd or wpa_supplicant: NetworkManager manages networking.
+
+dbus
+udevd
+polkitd
+NetworkManager
+chronyd
+greetd

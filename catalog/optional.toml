@@ -1,0 +1,202 @@
+# Voidbleed optional software catalog.
+#
+# The installer's "Drivers & software" screen is built from this file. Each
+# [[group]] is one checkbox.
+#
+#   default    "on" | "off" | "auto". "auto" is on only when every `detect`
+#              condition matches the machine being installed.
+#   detect     Hardware conditions, evaluated by the installer:
+#                gpu:intel  gpu:amd  gpu:nvidia
+#                gpu:nvidia-gen:<list>   NVIDIA architecture, e.g. "turing+", "maxwell,pascal"
+#                cpu:intel  cpu:amd  chassis:laptop  bluetooth
+#   exclusive  Groups sharing a key are mutually exclusive (radio buttons).
+#   requires   Group ids that get switched on together with this one.
+#   repos      Extra xbps repositories needed ("nonfree").
+#   packages   xbps packages.        flatpaks   Flathub app ids.
+#   services   runit services.       overlay    Directory copied onto the target root.
+#   cmdline    Kernel command line additions.
+
+schema = 1
+categories = ["drivers", "hardware", "system", "apps", "fonts"]
+
+# ── Drivers ──────────────────────────────────────────────────────────────────
+
+[[group]]
+id = "gpu-nvidia"
+name = "NVIDIA driver"
+description = "Proprietary driver for GeForce/Quadro RTX 20 series (Turing) and newer."
+category = "drivers"
+default = "auto"
+detect = ["gpu:nvidia", "gpu:nvidia-gen:turing+"]
+exclusive = "nvidia-driver"
+repos = ["nonfree"]
+packages = ["nvidia", "linux6.18-headers"]
+services = ["nvidia-powerd"]
+overlay = "overlays/nvidia"
+cmdline = ["nvidia_drm.modeset=1"]
+
+[[group]]
+id = "gpu-nvidia580"
+name = "NVIDIA driver (580 legacy)"
+description = "Proprietary 580 branch for GTX 900/1000 and Quadro Pascal cards."
+category = "drivers"
+default = "auto"
+detect = ["gpu:nvidia", "gpu:nvidia-gen:maxwell,pascal"]
+exclusive = "nvidia-driver"
+repos = ["nonfree"]
+packages = ["nvidia580", "linux6.18-headers"]
+services = ["nvidia-powerd"]
+overlay = "overlays/nvidia"
+cmdline = ["nvidia_drm.modeset=1"]
+
+[[group]]
+id = "gpu-intel"
+name = "Intel graphics acceleration"
+description = "VA-API video decoding and Vulkan for Intel GPUs."
+category = "drivers"
+default = "auto"
+detect = ["gpu:intel"]
+packages = ["intel-media-driver", "libvdpau-va-gl", "mesa-vulkan-intel"]
+
+[[group]]
+id = "gpu-amd"
+name = "AMD graphics acceleration"
+description = "VA-API video decoding and Vulkan for AMD GPUs."
+category = "drivers"
+default = "auto"
+detect = ["gpu:amd"]
+packages = ["mesa-vaapi", "mesa-vulkan-radeon"]
+
+[[group]]
+id = "microcode-intel"
+name = "Intel CPU microcode"
+description = "Security and stability fixes for Intel processors, loaded at boot."
+category = "drivers"
+default = "auto"
+detect = ["cpu:intel"]
+repos = ["nonfree"]
+packages = ["intel-ucode"]
+
+# ── Hardware ─────────────────────────────────────────────────────────────────
+
+[[group]]
+id = "bluetooth"
+name = "Bluetooth"
+description = "BlueZ with PipeWire Bluetooth audio."
+category = "hardware"
+default = "auto"
+detect = ["bluetooth"]
+packages = ["bluez", "libspa-bluetooth"]
+services = ["bluetoothd"]
+
+[[group]]
+id = "power-ppd"
+name = "Power profiles (recommended)"
+description = "power-profiles-daemon; switch Balanced/Performance/Saver from Noctalia."
+category = "hardware"
+default = "auto"
+detect = ["chassis:laptop"]
+exclusive = "power"
+packages = ["power-profiles-daemon"]
+services = ["power-profiles-daemon"]
+
+[[group]]
+id = "power-tlp"
+name = "TLP"
+description = "Aggressive, highly tunable laptop power saving. Not integrated with Noctalia."
+category = "hardware"
+default = "off"
+exclusive = "power"
+packages = ["tlp"]
+services = ["tlp"]
+
+[[group]]
+id = "printing"
+name = "Printing"
+description = "CUPS print server and filters."
+category = "hardware"
+default = "off"
+packages = ["cups", "cups-filters"]
+services = ["cupsd"]
+
+# ── System ───────────────────────────────────────────────────────────────────
+
+[[group]]
+id = "flatpak"
+name = "Flatpak + Flathub"
+description = "Install sandboxed apps from Flathub."
+category = "system"
+default = "on"
+packages = ["flatpak"]
+
+[[group]]
+id = "ssh-server"
+name = "SSH server"
+description = "Allow remote logins over SSH."
+category = "system"
+default = "off"
+services = ["sshd"]
+
+# ── Apps ─────────────────────────────────────────────────────────────────────
+
+[[group]]
+id = "firefox"
+name = "Firefox"
+description = "Web browser."
+category = "apps"
+default = "on"
+packages = ["firefox"]
+
+[[group]]
+id = "video-wallpaper"
+name = "Video wallpapers"
+description = "mpvpaper, used by Noctalia's mpvpaper plugin."
+category = "apps"
+default = "off"
+packages = ["mpvpaper"]
+
+[[group]]
+id = "steam"
+name = "Steam"
+description = "Valve's game store (Flatpak), with udev rules for controllers."
+category = "apps"
+default = "off"
+requires = ["flatpak"]
+packages = ["steam-udev-rules"]
+flatpaks = ["com.valvesoftware.Steam"]
+
+[[group]]
+id = "telegram"
+name = "Telegram"
+description = "Messaging app (Flatpak)."
+category = "apps"
+default = "off"
+requires = ["flatpak"]
+flatpaks = ["org.telegram.desktop"]
+
+[[group]]
+id = "localsend"
+name = "LocalSend"
+description = "Share files with nearby devices (Flatpak)."
+category = "apps"
+default = "off"
+requires = ["flatpak"]
+flatpaks = ["org.localsend.localsend_app"]
+
+# ── Fonts ────────────────────────────────────────────────────────────────────
+
+[[group]]
+id = "fonts-cjk"
+name = "Chinese, Japanese and Korean fonts"
+description = "Noto CJK (large download)."
+category = "fonts"
+default = "off"
+packages = ["noto-fonts-cjk"]
+
+[[group]]
+id = "fonts-arabic-script"
+name = "Persian and Arabic fonts"
+description = "Vazirmatn."
+category = "fonts"
+default = "off"
+packages = ["font-vazirmatn"]

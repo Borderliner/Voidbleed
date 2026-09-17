@@ -1,0 +1,5 @@
+# Services enabled on the reference machine that Voidbleed intentionally does not enable.
+# Format: service  <tab>  reason. Read by scripts/catalog.py drift.
+
+bluez-alsa	dropped with the bluez-alsa package; PipeWire handles Bluetooth audio
+fancontrol	needs a per-machine /etc/fancontrol from pwmconfig; users enable it themselves

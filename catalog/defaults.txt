@@ -1,0 +1,38 @@
+# Voidbleed defaults: installed explicitly on every system, but not required by
+# any metapackage, so users can remove them with a plain xbps-remove.
+
+# command-line tools
+starship
+bash-completion
+curl
+wget
+aria2
+7zip
+xz
+nano
+btop
+fzf
+ripgrep
+tmux
+lm_sensors
+exfatprogs
+ntfs-3g
+void-docs-browse
+
+# files and editing
+Thunar
+thunar-archive-plugin
+thunar-media-tags-plugin
+thunar-volman
+tumbler
+gvfs
+gvfs-mtp
+gvfs-smb
+engrampa
+mousepad
+nwg-look
+
+# viewers and media
+gthumb
+papers
+mpv

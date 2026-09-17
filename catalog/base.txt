@@ -1,0 +1,32 @@
+# Voidbleed base: hard dependencies of the voidbleed-base metapackage.
+# Removing any of these means removing voidbleed-base. One package per line.
+# base-system already brings firmware, openssh, dhcpcd, wpa_supplicant.
+
+base-system
+
+# kernel: pinned series. base-system's "linux" metapackage is ignored via
+# overlays/system/usr/share/xbps.d/05-voidbleed-kernel.conf. Bump deliberately;
+# 7.x is allowed but not the default.
+linux6.18
+linux-base
+void-repo-nonfree
+grub-x86_64-efi
+cryptsetup
+sudo
+vpm
+
+# services
+NetworkManager
+chrony
+dbus
+elogind
+polkit
+
+# audio
+pipewire
+wireplumber
+alsa-pipewire
+libjack-pipewire
+
+# shell
+fish-shell
