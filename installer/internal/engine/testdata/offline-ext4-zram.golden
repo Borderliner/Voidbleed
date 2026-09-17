@@ -1,0 +1,168 @@
+query xbps-query -p pkgver voidbleed-desktop
+query xbps-query -p pkgver zramen
+query xbps-query -p pkgver starship
+query xbps-query -p pkgver bash-completion
+query xbps-query -p pkgver curl
+query xbps-query -p pkgver wget
+query xbps-query -p pkgver aria2
+query xbps-query -p pkgver 7zip
+query xbps-query -p pkgver xz
+query xbps-query -p pkgver nano
+query xbps-query -p pkgver btop
+query xbps-query -p pkgver fzf
+query xbps-query -p pkgver ripgrep
+query xbps-query -p pkgver tmux
+query xbps-query -p pkgver lm_sensors
+query xbps-query -p pkgver exfatprogs
+query xbps-query -p pkgver ntfs-3g
+query xbps-query -p pkgver void-docs-browse
+query xbps-query -p pkgver Thunar
+query xbps-query -p pkgver thunar-archive-plugin
+query xbps-query -p pkgver thunar-media-tags-plugin
+query xbps-query -p pkgver thunar-volman
+query xbps-query -p pkgver tumbler
+query xbps-query -p pkgver gvfs
+query xbps-query -p pkgver gvfs-mtp
+query xbps-query -p pkgver gvfs-smb
+query xbps-query -p pkgver engrampa
+query xbps-query -p pkgver mousepad
+query xbps-query -p pkgver nwg-look
+query xbps-query -p pkgver gthumb
+query xbps-query -p pkgver papers
+query xbps-query -p pkgver mpv
+query xbps-query -p pkgver nvidia580
+query xbps-query -p pkgver linux6.18-headers
+query xbps-query -p pkgver intel-media-driver
+query xbps-query -p pkgver libvdpau-va-gl
+query xbps-query -p pkgver mesa-vulkan-intel
+query xbps-query -p pkgver intel-ucode
+query xbps-query -p pkgver bluez
+query xbps-query -p pkgver libspa-bluetooth
+query xbps-query -p pkgver power-profiles-daemon
+query xbps-query -p pkgver flatpak
+query xbps-query -p pkgver firefox
+query xbps-query -p pkgver voidbleed-nvidia-config
+query curl -fsI --max-time 15 https://repo-default.voidlinux.org/current/x86_64-repodata
+run   wipefs --all --force /dev/nvme0n1
+run   sfdisk --wipe always --wipe-partitions always /dev/nvme0n1  <<<
+      | label: gpt
+      | size=1024MiB, type=U, name="EFI"
+      | type=L, name="voidbleed"
+run   udevadm settle --timeout=30
+run   wipefs --all --force /dev/nvme0n1p1
+run   wipefs --all --force /dev/nvme0n1p2
+run   mkfs.vfat -F 32 -n EFI /dev/nvme0n1p1
+run   mkfs.ext4 -F -L voidbleed /dev/nvme0n1p2
+mkdir /mnt/voidbleed
+run   mount -o noatime /dev/nvme0n1p2 /mnt/voidbleed
+mkdir /mnt/voidbleed/boot
+run   mount -o umask=0077 /dev/nvme0n1p1 /mnt/voidbleed/boot
+run   sh -c 'tar --create --one-file-system --xattrs --acls --numeric-owner --exclude=./boot/* --exclude=./tmp/* --exclude=./var/cache/xbps/* --exclude=./var/tmp/* -f - -C / . | tar --extract --xattrs --xattrs-include='\''*'\'' --acls --numeric-owner --preserve-permissions -f - -C /mnt/voidbleed'
+run   cp -r /boot/. /mnt/voidbleed/boot/
+run   chroot /mnt/voidbleed userdel -r anon
+rm    /mnt/voidbleed/etc/motd
+rm    /mnt/voidbleed/etc/issue
+rm    /mnt/voidbleed/etc/default/live.conf
+rm    /mnt/voidbleed/etc/sudoers.d/99-void-live
+rm    /mnt/voidbleed/etc/sudoers.d/zz-voidbleed-live
+rm    /mnt/voidbleed/etc/polkit-1/rules.d/void-live.rules
+rm    /mnt/voidbleed/etc/runit/core-services/90-voidbleed-live.sh
+rm    /mnt/voidbleed/etc/sv/greetd/down
+rm    /mnt/voidbleed/var/lib/dbus/machine-id
+rm    /mnt/voidbleed/var/lib/seedrng
+run   chroot /mnt/voidbleed dbus-uuidgen --ensure
+run   cp -a /mnt/voidbleed/usr/share/voidbleed/live-pristine/. /mnt/voidbleed/
+rm    /mnt/voidbleed/usr/share/voidbleed/live-pristine
+run   sed -i 's/^GETTY_ARGS="--noclear -a [^"]*"/GETTY_ARGS="--noclear"/' /mnt/voidbleed/etc/sv/agetty-tty1/conf
+mkdir /mnt/voidbleed/dev
+mkdir /mnt/voidbleed/proc
+mkdir /mnt/voidbleed/sys
+mkdir /mnt/voidbleed/run
+run   mount --rbind /dev /mnt/voidbleed/dev
+run   mount --make-rslave /mnt/voidbleed/dev
+run   mount -t proc proc /mnt/voidbleed/proc
+run   mount --rbind /sys /mnt/voidbleed/sys
+run   mount --make-rslave /mnt/voidbleed/sys
+run   mount -t tmpfs -o mode=0755,nosuid,nodev tmpfs /mnt/voidbleed/run
+run   cp -L /etc/resolv.conf /mnt/voidbleed/etc/resolv.conf
+query xbps-query -r /mnt/voidbleed -X mesa-vaapi
+run   xbps-remove -r /mnt/voidbleed -R -y mesa-vaapi
+query xbps-query -r /mnt/voidbleed -X mesa-vulkan-radeon
+run   xbps-remove -r /mnt/voidbleed -R -y mesa-vulkan-radeon
+write /mnt/voidbleed/etc/hostname (0644)
+      | voidbleed
+append /mnt/voidbleed/etc/hosts
+      | 127.0.1.1	voidbleed.localdomain	voidbleed
+write /mnt/voidbleed/etc/locale.conf (0644)
+      | LANG=en_US.UTF-8
+      | LC_COLLATE=C
+write /mnt/voidbleed/etc/default/libc-locales (0644)
+      | en_US.UTF-8 UTF-8  
+      | #fa_IR UTF-8  
+run   chroot /mnt/voidbleed xbps-reconfigure -f glibc-locales
+link  /mnt/voidbleed/etc/localtime -> /usr/share/zoneinfo/Asia/Tehran
+write /mnt/voidbleed/etc/rc.conf (0644)
+      | # rc.conf
+      | #HOSTNAME="void"
+      | HARDWARECLOCK="UTC"
+      | KEYMAP="us"
+query blkid -s UUID -o value /dev/nvme0n1p2
+query blkid -s UUID -o value /dev/nvme0n1p1
+write /mnt/voidbleed/etc/fstab (0644)
+      | # /etc/fstab: written by the Voidbleed installer
+      | # <device>	<mountpoint>	<type>	<options>	<dump>	<pass>
+      | UUID=uuid-of-nvme0n1p2	/	ext4	defaults,noatime	0	1
+      | UUID=uuid-of-nvme0n1p1	/boot	vfat	umask=0077	0	2
+      | tmpfs	/tmp	tmpfs	defaults,nosuid,nodev	0	0
+write /mnt/voidbleed/etc/dracut.conf.d/voidbleed.conf (0644)
+      | # Voidbleed: only include what this machine needs.
+      | hostonly="yes"
+run   chroot /mnt/voidbleed passwd -l root
+run   chroot /mnt/voidbleed useradd -m -G wheel,audio,video,input,network,kvm,plugdev -c Reza reza
+run   chroot /mnt/voidbleed chpasswd -c SHA512  <<< [secret]
+run   sed -i 's|@HOME@|/home/reza|g' /mnt/voidbleed/home/reza/.config/qt6ct/qt6ct.conf
+write /mnt/voidbleed/home/reza/.config/niri/local.kdl (0644)
+      | // Written by the Voidbleed installer: settings for this machine.
+      | // Anything here overrides config.kdl.
+      | 
+      | input {
+      |     keyboard {
+      |         xkb {
+      |             layout "us,ir"
+      |         }
+      |     }
+      | }
+run   chroot /mnt/voidbleed chown -R reza:reza /home/reza/.config
+run   chroot /mnt/voidbleed runuser -u reza -- env HOME=/home/reza xdg-user-dirs-update
+append /mnt/voidbleed/var/lib/noctalia-greeter/greeter.toml
+      | 
+      | [keyboard]
+      | layout = "us,ir"
+run   chroot /mnt/voidbleed chown _greeter:_greeter /var/lib/noctalia-greeter/greeter.toml
+rm    /mnt/voidbleed/etc/runit/runsvdir/default/tlp
+rm    /mnt/voidbleed/etc/runit/runsvdir/default/cupsd
+rm    /mnt/voidbleed/etc/runit/runsvdir/default/sshd
+rm    /mnt/voidbleed/etc/runit/runsvdir/default/dhcpcd
+rm    /mnt/voidbleed/etc/runit/runsvdir/default/wpa_supplicant
+link  /mnt/voidbleed/etc/runit/runsvdir/default/dbus -> /etc/sv/dbus
+link  /mnt/voidbleed/etc/runit/runsvdir/default/udevd -> /etc/sv/udevd
+link  /mnt/voidbleed/etc/runit/runsvdir/default/polkitd -> /etc/sv/polkitd
+link  /mnt/voidbleed/etc/runit/runsvdir/default/NetworkManager -> /etc/sv/NetworkManager
+link  /mnt/voidbleed/etc/runit/runsvdir/default/chronyd -> /etc/sv/chronyd
+link  /mnt/voidbleed/etc/runit/runsvdir/default/greetd -> /etc/sv/greetd
+link  /mnt/voidbleed/etc/runit/runsvdir/default/nvidia-powerd -> /etc/sv/nvidia-powerd
+link  /mnt/voidbleed/etc/runit/runsvdir/default/bluetoothd -> /etc/sv/bluetoothd
+link  /mnt/voidbleed/etc/runit/runsvdir/default/power-profiles-daemon -> /etc/sv/power-profiles-daemon
+link  /mnt/voidbleed/etc/runit/runsvdir/default/zramen -> /etc/sv/zramen
+run   chroot /mnt/voidbleed flatpak remote-add --system --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+write /mnt/voidbleed/etc/default/grub (0644)
+      | GRUB_DEFAULT=0
+      | GRUB_TIMEOUT=5
+      | GRUB_DISTRIBUTOR="Voidbleed"
+      | GRUB_CMDLINE_LINUX_DEFAULT="loglevel=4 nvidia_drm.modeset=1"
+run   chroot /mnt/voidbleed grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=Voidbleed --recheck
+run   chroot /mnt/voidbleed grub-install --target=x86_64-efi --efi-directory=/boot --removable --recheck
+run   chroot /mnt/voidbleed xbps-reconfigure -f linux6.18
+run   chroot /mnt/voidbleed grub-mkconfig -o /boot/grub/grub.cfg
+run   sync
+run   umount -R /mnt/voidbleed

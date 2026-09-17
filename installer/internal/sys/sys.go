@@ -213,6 +213,8 @@ type DryRun struct {
 	Files   map[string]string
 	// DefaultOutput answers Output calls without a canned response.
 	DefaultOutput func(cmd Cmd) string
+	// Fail, when set, makes Run and Output return its error for cmd.
+	Fail func(cmd Cmd) error
 }
 
 func NewDryRun() *DryRun {
@@ -242,11 +244,19 @@ func (d *DryRun) Run(_ context.Context, cmd Cmd) error {
 		line += "  <<<\n" + indent(cmd.Stdin)
 	}
 	d.record("%s", line)
+	if d.Fail != nil {
+		return d.Fail(cmd)
+	}
 	return nil
 }
 
 func (d *DryRun) Output(_ context.Context, cmd Cmd) (string, error) {
 	d.record("query %s", cmd.String())
+	if d.Fail != nil {
+		if err := d.Fail(cmd); err != nil {
+			return "", err
+		}
+	}
 	if out, ok := d.Outputs[cmd.String()]; ok {
 		return out, nil
 	}

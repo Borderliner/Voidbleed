@@ -1,0 +1,113 @@
+query curl -fsI --max-time 15 https://repo-default.voidlinux.org/current/x86_64-repodata
+run   wipefs --all --force /dev/nvme0n1
+run   sfdisk --wipe always --wipe-partitions always /dev/nvme0n1  <<<
+      | label: gpt
+      | size=1024MiB, type=U, name="EFI"
+      | size=4096MiB, type=S, name="swap"
+      | type=L, name="voidbleed"
+run   udevadm settle --timeout=30
+run   wipefs --all --force /dev/nvme0n1p1
+run   wipefs --all --force /dev/nvme0n1p2
+run   wipefs --all --force /dev/nvme0n1p3
+run   mkfs.vfat -F 32 -n EFI /dev/nvme0n1p1
+run   mkswap -L swap /dev/nvme0n1p2
+run   mkfs.ext4 -F -L voidbleed /dev/nvme0n1p3
+mkdir /mnt/voidbleed
+run   mount -o noatime /dev/nvme0n1p3 /mnt/voidbleed
+mkdir /mnt/voidbleed/boot
+run   mount -o umask=0077 /dev/nvme0n1p1 /mnt/voidbleed/boot
+mkdir /mnt/voidbleed/var/db/xbps/keys
+mkdir /mnt/voidbleed/usr/share/xbps.d
+mkdir /mnt/voidbleed/etc
+run   sh -c 'cp /var/db/xbps/keys/*.plist /mnt/voidbleed/var/db/xbps/keys/ && cp /usr/share/xbps.d/05-voidbleed-*.conf /usr/share/xbps.d/20-voiders-community.conf /mnt/voidbleed/usr/share/xbps.d/'
+mkdir /mnt/voidbleed/dev
+mkdir /mnt/voidbleed/proc
+mkdir /mnt/voidbleed/sys
+mkdir /mnt/voidbleed/run
+run   mount --rbind /dev /mnt/voidbleed/dev
+run   mount --make-rslave /mnt/voidbleed/dev
+run   mount -t proc proc /mnt/voidbleed/proc
+run   mount --rbind /sys /mnt/voidbleed/sys
+run   mount --make-rslave /mnt/voidbleed/sys
+run   mount -t tmpfs -o mode=0755,nosuid,nodev tmpfs /mnt/voidbleed/run
+run   cp -L /etc/resolv.conf /mnt/voidbleed/etc/resolv.conf
+run   xbps-install -S -y -r /mnt/voidbleed --repository=/usr/share/voidbleed/repo --repository=https://repo-default.voidlinux.org/current --repository=https://repo.voiders.dev voidbleed-desktop zramen starship bash-completion curl wget aria2 7zip xz nano btop fzf ripgrep tmux lm_sensors exfatprogs ntfs-3g void-docs-browse Thunar thunar-archive-plugin thunar-media-tags-plugin thunar-volman tumbler gvfs gvfs-mtp gvfs-smb engrampa mousepad nwg-look gthumb papers mpv
+run   xbps-reconfigure -r /mnt/voidbleed -f base-files
+write /mnt/voidbleed/etc/hostname (0644)
+      | voidbleed
+append /mnt/voidbleed/etc/hosts
+      | 127.0.1.1	voidbleed.localdomain	voidbleed
+write /mnt/voidbleed/etc/locale.conf (0644)
+      | LANG=en_US.UTF-8
+      | LC_COLLATE=C
+write /mnt/voidbleed/etc/default/libc-locales (0644)
+      | en_US.UTF-8 UTF-8  
+      | #fa_IR UTF-8  
+run   chroot /mnt/voidbleed xbps-reconfigure -f glibc-locales
+link  /mnt/voidbleed/etc/localtime -> /usr/share/zoneinfo/Asia/Tehran
+write /mnt/voidbleed/etc/rc.conf (0644)
+      | # rc.conf
+      | #HOSTNAME="void"
+      | HARDWARECLOCK="UTC"
+      | KEYMAP="us"
+query blkid -s UUID -o value /dev/nvme0n1p3
+query blkid -s UUID -o value /dev/nvme0n1p1
+query blkid -s UUID -o value /dev/nvme0n1p2
+write /mnt/voidbleed/etc/fstab (0644)
+      | # /etc/fstab: written by the Voidbleed installer
+      | # <device>	<mountpoint>	<type>	<options>	<dump>	<pass>
+      | UUID=uuid-of-nvme0n1p3	/	ext4	defaults,noatime	0	1
+      | UUID=uuid-of-nvme0n1p1	/boot	vfat	umask=0077	0	2
+      | UUID=uuid-of-nvme0n1p2	none	swap	defaults	0	0
+      | tmpfs	/tmp	tmpfs	defaults,nosuid,nodev	0	0
+write /mnt/voidbleed/etc/dracut.conf.d/voidbleed.conf (0644)
+      | # Voidbleed: only include what this machine needs.
+      | hostonly="yes"
+run   chroot /mnt/voidbleed passwd -l root
+run   chroot /mnt/voidbleed useradd -m -G wheel,audio,video,input,network,kvm,plugdev -c Reza reza
+run   chroot /mnt/voidbleed chpasswd -c SHA512  <<< [secret]
+run   sed -i 's|@HOME@|/home/reza|g' /mnt/voidbleed/home/reza/.config/qt6ct/qt6ct.conf
+write /mnt/voidbleed/home/reza/.config/niri/local.kdl (0644)
+      | // Written by the Voidbleed installer: settings for this machine.
+      | // Anything here overrides config.kdl.
+      | 
+      | input {
+      |     keyboard {
+      |         xkb {
+      |             layout "us,ir"
+      |         }
+      |     }
+      | }
+run   chroot /mnt/voidbleed chown -R reza:reza /home/reza/.config
+run   chroot /mnt/voidbleed runuser -u reza -- env HOME=/home/reza xdg-user-dirs-update
+append /mnt/voidbleed/var/lib/noctalia-greeter/greeter.toml
+      | 
+      | [keyboard]
+      | layout = "us,ir"
+run   chroot /mnt/voidbleed chown _greeter:_greeter /var/lib/noctalia-greeter/greeter.toml
+rm    /mnt/voidbleed/etc/runit/runsvdir/default/nvidia-powerd
+rm    /mnt/voidbleed/etc/runit/runsvdir/default/bluetoothd
+rm    /mnt/voidbleed/etc/runit/runsvdir/default/power-profiles-daemon
+rm    /mnt/voidbleed/etc/runit/runsvdir/default/tlp
+rm    /mnt/voidbleed/etc/runit/runsvdir/default/cupsd
+rm    /mnt/voidbleed/etc/runit/runsvdir/default/sshd
+rm    /mnt/voidbleed/etc/runit/runsvdir/default/zramen
+rm    /mnt/voidbleed/etc/runit/runsvdir/default/dhcpcd
+rm    /mnt/voidbleed/etc/runit/runsvdir/default/wpa_supplicant
+link  /mnt/voidbleed/etc/runit/runsvdir/default/dbus -> /etc/sv/dbus
+link  /mnt/voidbleed/etc/runit/runsvdir/default/udevd -> /etc/sv/udevd
+link  /mnt/voidbleed/etc/runit/runsvdir/default/polkitd -> /etc/sv/polkitd
+link  /mnt/voidbleed/etc/runit/runsvdir/default/NetworkManager -> /etc/sv/NetworkManager
+link  /mnt/voidbleed/etc/runit/runsvdir/default/chronyd -> /etc/sv/chronyd
+link  /mnt/voidbleed/etc/runit/runsvdir/default/greetd -> /etc/sv/greetd
+write /mnt/voidbleed/etc/default/grub (0644)
+      | GRUB_DEFAULT=0
+      | GRUB_TIMEOUT=5
+      | GRUB_DISTRIBUTOR="Voidbleed"
+      | GRUB_CMDLINE_LINUX_DEFAULT="loglevel=4"
+run   chroot /mnt/voidbleed grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=Voidbleed --recheck
+run   chroot /mnt/voidbleed grub-install --target=x86_64-efi --efi-directory=/boot --removable --recheck
+run   chroot /mnt/voidbleed xbps-reconfigure -f linux6.18
+run   chroot /mnt/voidbleed grub-mkconfig -o /boot/grub/grub.cfg
+run   sync
+run   umount -R /mnt/voidbleed
