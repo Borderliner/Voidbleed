@@ -24,6 +24,7 @@ Ghostty, and a Bubbletea TUI installer.
 | `iso/` | Live ISO definition: groups, live-only files, postsetup hook, splash |
 | `scripts/` | Snapshot, catalog checks, package/ISO builds, repo tests, QEMU helpers |
 | `scripts/pngtool.py` | Stdlib-only PNG resize/trim (splash and icons from the artwork) |
+| `installer/` | The installer: engine, TUI and unattended CLI (Go) |
 | `docs/` | Branding and per-phase notes |
 
 ## Common tasks
@@ -36,5 +37,8 @@ scripts/build-packages.sh voidbleed-desktop-config   # rebuild one package
 scripts/test-repo.sh                   # install-test the repo in a scratch root
 sudo scripts/build-iso.sh [--fast]     # live ISO into build/ (see docs/phase-3.md)
 scripts/qemu-test.sh                   # boot the newest ISO in QEMU
+cd installer && go test ./...          # installer unit and golden tests
+build/voidbleed-installer --demo       # try the installer interface safely
+scripts/vm-install-test.py --config install.toml   # full install in a VM
 scripts/snapshot-host.sh && scripts/catalog.py drift snapshot/<name>
 ```
