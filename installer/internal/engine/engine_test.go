@@ -63,6 +63,7 @@ func dryRun(p *Plan) *sys.DryRun {
 		p.T("etc/default/libc-locales"):              "#en_US.UTF-8 UTF-8  \n#fa_IR UTF-8  \n",
 		p.T("etc/rc.conf"):                           "# rc.conf\n#HOSTNAME=\"void\"\n#HARDWARECLOCK=\"UTC\"\nKEYMAP=\"us\"\n",
 		p.T("etc/group"):                             "root:x:0:\nwheel:x:4:\naudio:x:12:\nvideo:x:13:\ninput:x:25:\nnetwork:x:21:\nkvm:x:24:\nplugdev:x:26:\n",
+		p.T("etc/passwd"):                            "root:x:0:0::/root:/bin/bash\nreza:x:1000:1000::/home/reza:/usr/bin/fish\n",
 		p.T("etc/default/grub"):                      "GRUB_DEFAULT=0\nGRUB_TIMEOUT=5\nGRUB_DISTRIBUTOR=\"Void\"\nGRUB_CMDLINE_LINUX_DEFAULT=\"loglevel=4\"\n",
 		p.T("var/lib/noctalia-greeter/greeter.toml"): "# noctalia-greeter greeter.toml\n",
 	}

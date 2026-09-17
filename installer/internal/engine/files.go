@@ -99,12 +99,19 @@ func enableLocale(content, locale string) (string, bool) {
 	return strings.Join(lines, "\n"), found
 }
 
-func (p *Plan) niriLocal() string {
-	return "// Written by the Voidbleed installer: settings for this machine.\n" +
+// niriLocal is the per-machine include: the keyboard layouts chosen in the
+// installer, and the gnome-keyring SSH agent socket, whose path contains the
+// user's numeric id.
+func (p *Plan) niriLocal(uid string) string {
+	s := "// Written by the Voidbleed installer: settings for this machine.\n" +
 		"// Anything here overrides config.kdl.\n\n" +
 		"input {\n    keyboard {\n        xkb {\n" +
 		fmt.Sprintf("            layout %q\n", strings.Join(p.Config.System.KeyboardLayouts, ",")) +
 		"        }\n    }\n}\n"
+	if uid != "" {
+		s += fmt.Sprintf("\nenvironment {\n    SSH_AUTH_SOCK \"/run/user/%s/keyring/ssh\"\n}\n", uid)
+	}
+	return s
 }
 
 func (p *Plan) greeterKeyboard() string {

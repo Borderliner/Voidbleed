@@ -68,6 +68,19 @@ func TestDetectDesktopWithoutBattery(t *testing.T) {
 	}
 }
 
+func TestVirtualGPU(t *testing.T) {
+	root := t.TempDir()
+	write(t, root, "proc/cpuinfo", "vendor_id\t: GenuineIntel\n")
+	write(t, root, "sys/bus/pci/devices/0000:00:01.0/class", "0x030000\n")
+	write(t, root, "sys/bus/pci/devices/0000:00:01.0/vendor", "0x1af4\n")
+	write(t, root, "sys/bus/pci/devices/0000:00:01.0/device", "0x1050\n")
+	d := Detector{Root: root, Lsblk: func() ([]byte, error) { return []byte(`{"blockdevices":[]}`), nil }}
+	f, _ := d.Detect()
+	if len(f.GPUs) != 1 || f.GPUs[0].Vendor != Virtual {
+		t.Fatalf("virtio-gpu not recognised: %+v", f.GPUs)
+	}
+}
+
 func TestNvidiaGeneration(t *testing.T) {
 	cases := map[uint16]string{
 		0x1180: GenOlder,   // GTX 680 (Kepler)

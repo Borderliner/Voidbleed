@@ -43,7 +43,7 @@ func (*welcomeScreen) view(m *Model, width, height int) string {
 
 	var gpus []string
 	for _, g := range f.GPUs {
-		name := map[hw.Vendor]string{hw.Intel: "Intel", hw.AMD: "AMD", hw.NVIDIA: "NVIDIA"}[g.Vendor]
+		name := map[hw.Vendor]string{hw.Intel: "Intel", hw.AMD: "AMD", hw.NVIDIA: "NVIDIA", hw.Virtual: "Virtual GPU"}[g.Vendor]
 		if name == "" {
 			name = "Other"
 		}

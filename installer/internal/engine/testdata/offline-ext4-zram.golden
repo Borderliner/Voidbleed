@@ -30,6 +30,7 @@ query xbps-query -p pkgver nwg-look
 query xbps-query -p pkgver gthumb
 query xbps-query -p pkgver papers
 query xbps-query -p pkgver mpv
+query xbps-query -p pkgver lollypop
 query xbps-query -p pkgver nvidia580
 query xbps-query -p pkgver linux6.18-headers
 query xbps-query -p pkgver intel-media-driver
@@ -131,6 +132,10 @@ write /mnt/voidbleed/home/reza/.config/niri/local.kdl (0644)
       |             layout "us,ir"
       |         }
       |     }
+      | }
+      | 
+      | environment {
+      |     SSH_AUTH_SOCK "/run/user/1000/keyring/ssh"
       | }
 run   chroot /mnt/voidbleed chown -R reza:reza /home/reza/.config
 run   chroot /mnt/voidbleed runuser -u reza -- env HOME=/home/reza xdg-user-dirs-update

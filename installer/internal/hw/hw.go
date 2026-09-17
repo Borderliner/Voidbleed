@@ -17,10 +17,11 @@ import (
 type Vendor string
 
 const (
-	Intel  Vendor = "intel"
-	AMD    Vendor = "amd"
-	NVIDIA Vendor = "nvidia"
-	Other  Vendor = "other"
+	Intel   Vendor = "intel"
+	AMD     Vendor = "amd"
+	NVIDIA  Vendor = "nvidia"
+	Virtual Vendor = "virtual" // virtio-gpu, QXL, VMware, Bochs
+	Other   Vendor = "other"
 )
 
 // NVIDIA architecture families, as used by catalog detect rules.
@@ -200,6 +201,8 @@ func (d Detector) gpus() []GPU {
 		case 0x10de:
 			g.Vendor = NVIDIA
 			g.NvidiaGen = NvidiaGeneration(device)
+		case 0x1af4, 0x1b36, 0x15ad, 0x1234, 0x80ee:
+			g.Vendor = Virtual
 		default:
 			g.Vendor = Other
 		}

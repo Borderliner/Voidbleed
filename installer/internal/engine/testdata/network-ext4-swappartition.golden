@@ -31,7 +31,7 @@ run   mount --rbind /sys /mnt/voidbleed/sys
 run   mount --make-rslave /mnt/voidbleed/sys
 run   mount -t tmpfs -o mode=0755,nosuid,nodev tmpfs /mnt/voidbleed/run
 run   cp -L /etc/resolv.conf /mnt/voidbleed/etc/resolv.conf
-run   xbps-install -S -y -r /mnt/voidbleed --repository=/usr/share/voidbleed/repo --repository=https://repo-default.voidlinux.org/current --repository=https://repo.voiders.dev voidbleed-desktop zramen starship bash-completion curl wget aria2 7zip xz nano btop fzf ripgrep tmux lm_sensors exfatprogs ntfs-3g void-docs-browse Thunar thunar-archive-plugin thunar-media-tags-plugin thunar-volman tumbler gvfs gvfs-mtp gvfs-smb engrampa mousepad nwg-look gthumb papers mpv
+run   xbps-install -S -y -r /mnt/voidbleed --repository=/usr/share/voidbleed/repo --repository=https://repo-default.voidlinux.org/current --repository=https://repo.voiders.dev voidbleed-desktop zramen starship bash-completion curl wget aria2 7zip xz nano btop fzf ripgrep tmux lm_sensors exfatprogs ntfs-3g void-docs-browse Thunar thunar-archive-plugin thunar-media-tags-plugin thunar-volman tumbler gvfs gvfs-mtp gvfs-smb engrampa mousepad nwg-look gthumb papers mpv lollypop
 run   xbps-reconfigure -r /mnt/voidbleed -f base-files
 write /mnt/voidbleed/etc/hostname (0644)
       | voidbleed
@@ -77,6 +77,10 @@ write /mnt/voidbleed/home/reza/.config/niri/local.kdl (0644)
       |             layout "us,ir"
       |         }
       |     }
+      | }
+      | 
+      | environment {
+      |     SSH_AUTH_SOCK "/run/user/1000/keyring/ssh"
       | }
 run   chroot /mnt/voidbleed chown -R reza:reza /home/reza/.config
 run   chroot /mnt/voidbleed runuser -u reza -- env HOME=/home/reza xdg-user-dirs-update

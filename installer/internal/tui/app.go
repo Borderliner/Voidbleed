@@ -8,6 +8,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+	"github.com/charmbracelet/x/ansi"
 
 	"voidbleed/installer/internal/catalog"
 	"voidbleed/installer/internal/config"
@@ -238,7 +239,8 @@ func (m *Model) helpLine(width int) string {
 		parts = append(parts, s.key.Render("ctrl+c")+" "+s.keyDesc.Render("quit"))
 	}
 	line := strings.Join(parts, s.dim.Render("  "+m.glyphs.Sep+"  "))
-	return lipgloss.NewStyle().Width(width).MaxWidth(width).Render(line)
+	// Truncate rather than wrap: a second help line would push the body up.
+	return ansi.Truncate(line, width, m.glyphs.Ellipsis)
 }
 
 func (m *Model) quitDialog() string {

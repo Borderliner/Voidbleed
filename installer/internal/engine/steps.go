@@ -550,11 +550,21 @@ func createUsers(ctx context.Context, x *Exec) error {
 		return err
 	}
 
+	// The SSH agent socket path needs the account's numeric id.
+	uid := ""
+	if raw, err := x.R.ReadFile(p.T("etc/passwd")); err == nil {
+		for _, line := range strings.Split(string(raw), "\n") {
+			if fields := strings.Split(line, ":"); len(fields) > 2 && fields[0] == u.Name {
+				uid = fields[2]
+			}
+		}
+	}
+
 	home := "/home/" + u.Name
 	if err := x.run(ctx, "sed", "-i", "s|@HOME@|"+home+"|g", p.T(home, ".config/qt6ct/qt6ct.conf")); err != nil {
 		return err
 	}
-	if err := x.R.WriteFile(p.T(home, ".config/niri/local.kdl"), []byte(p.niriLocal()), 0o644); err != nil {
+	if err := x.R.WriteFile(p.T(home, ".config/niri/local.kdl"), []byte(p.niriLocal(uid)), 0o644); err != nil {
 		return err
 	}
 	if err := x.chroot(ctx, "chown", "-R", u.Name+":"+u.Name, home+"/.config"); err != nil {
