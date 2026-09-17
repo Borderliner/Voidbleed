@@ -66,6 +66,7 @@ Verified in QEMU on 2026-09-17, against the 2026-09-17 ISO:
 | offline, ext4, zram, flatpak + firefox | installed in 2m01s, boots to the greeter and desktop |
 | network, btrfs + LUKS2, 2 GiB swap file | installed in 6m24s, asks for the passphrase at boot |
 
-Note: after the greeter hands the display to the session, QEMU's virgl
-screenshots keep showing the previous frame until input arrives. Sending a key
-refreshes it; the guest is fine.
+The VM test found a real bug this way: the installed system's session started
+without a D-Bus session bus and hung before drawing anything (see
+`fix(desktop): start the session with its own dbus bus`). Both cases boot to
+the desktop with that fix.

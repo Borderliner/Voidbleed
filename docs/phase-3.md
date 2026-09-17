@@ -90,7 +90,8 @@ instead of silently producing an unbranded ISO.
 - [x] graphical session: greetd → niri → Noctalia with red theme (~75 s in QEMU)
 - [x] wallpaper boot splash, wallpaper desktop, vibrant generated colors,
       setup wizard skipped (ISO 2026-09-17)
-- [ ] rebuild with the live keyring fix and re-verify
+- [ ] rebuild with the live keyring fix, the installer and the session
+      wrapper, then re-verify
 - [ ] boots in QEMU legacy BIOS
 - [ ] boots on real hardware (reference laptop)
 
