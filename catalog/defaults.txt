@@ -1,6 +1,9 @@
 # Voidbleed defaults: installed explicitly on every system, but not required by
 # any metapackage, so users can remove them with a plain xbps-remove.
 
+# system
+zramen	# zram swap; the installer enables its service when zram is chosen
+
 # command-line tools
 starship
 bash-completion
