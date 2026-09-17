@@ -71,8 +71,8 @@ rm    /mnt/voidbleed/etc/sv/greetd/down
 rm    /mnt/voidbleed/var/lib/dbus/machine-id
 rm    /mnt/voidbleed/var/lib/seedrng
 run   chroot /mnt/voidbleed dbus-uuidgen --ensure
-run   cp -a /mnt/voidbleed/usr/share/voidbleed/live-pristine/. /mnt/voidbleed/
-rm    /mnt/voidbleed/usr/share/voidbleed/live-pristine
+run   cp /mnt/voidbleed/usr/share/voidbleed/greetd/config.toml /mnt/voidbleed/etc/greetd/config.toml
+run   sed -i 's|/home/anon|@HOME@|g' /mnt/voidbleed/etc/skel/.config/qt6ct/qt6ct.conf
 run   sed -i 's/^GETTY_ARGS="--noclear -a [^"]*"/GETTY_ARGS="--noclear"/' /mnt/voidbleed/etc/sv/agetty-tty1/conf
 mkdir /mnt/voidbleed/dev
 mkdir /mnt/voidbleed/proc

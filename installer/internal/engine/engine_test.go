@@ -65,7 +65,6 @@ func dryRun(p *Plan) *sys.DryRun {
 		p.T("etc/group"):                             "root:x:0:\nwheel:x:4:\naudio:x:12:\nvideo:x:13:\ninput:x:25:\nnetwork:x:21:\nkvm:x:24:\nplugdev:x:26:\n",
 		p.T("etc/default/grub"):                      "GRUB_DEFAULT=0\nGRUB_TIMEOUT=5\nGRUB_DISTRIBUTOR=\"Void\"\nGRUB_CMDLINE_LINUX_DEFAULT=\"loglevel=4\"\n",
 		p.T("var/lib/noctalia-greeter/greeter.toml"): "# noctalia-greeter greeter.toml\n",
-		p.T(p.Paths.Pristine):                        "",
 	}
 	for path, content := range seed {
 		d.Files[path] = content

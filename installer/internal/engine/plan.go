@@ -16,7 +16,6 @@ import (
 type Paths struct {
 	Target      string // where the new system is mounted
 	LiveRepo    string // voidbleed-* packages shipped on the ISO
-	Pristine    string // originals of files the live session modifies
 	LiveGroups  string // optional groups baked into the live image
 	LiveConf    string // mklive's live user record
 	XbpsKeys    string
@@ -28,7 +27,6 @@ func DefaultPaths() Paths {
 	return Paths{
 		Target:      "/mnt/voidbleed",
 		LiveRepo:    "/usr/share/voidbleed/repo",
-		Pristine:    "/usr/share/voidbleed/live-pristine",
 		LiveGroups:  "/usr/share/voidbleed/live-groups.txt",
 		LiveConf:    "/etc/default/live.conf",
 		XbpsKeys:    "/var/db/xbps/keys",

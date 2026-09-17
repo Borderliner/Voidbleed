@@ -356,13 +356,13 @@ func cleanupLive(ctx context.Context, x *Exec) error {
 	if err := x.chroot(ctx, "dbus-uuidgen", "--ensure"); err != nil {
 		return err
 	}
-	if x.R.Exists(p.T(p.Paths.Pristine)) {
-		if err := x.run(ctx, "cp", "-a", p.T(p.Paths.Pristine)+"/.", p.Paths.Target+"/"); err != nil {
-			return err
-		}
-		if err := x.R.RemoveAll(p.T(p.Paths.Pristine)); err != nil {
-			return err
-		}
+	// Undo the live ISO's edits using what the packages ship: greetd's
+	// autologin config and the live user's home baked into the Qt skeleton.
+	if err := x.run(ctx, "cp", p.T("usr/share/voidbleed/greetd/config.toml"), p.T("etc/greetd/config.toml")); err != nil {
+		return err
+	}
+	if err := x.run(ctx, "sed", "-i", "s|/home/"+liveUser+"|@HOME@|g", p.T("etc/skel/.config/qt6ct/qt6ct.conf")); err != nil {
+		return err
 	}
 	return x.run(ctx, "sed", "-i", `s/^GETTY_ARGS="--noclear -a [^"]*"/GETTY_ARGS="--noclear"/`, p.T("etc/sv/agetty-tty1/conf"))
 }
