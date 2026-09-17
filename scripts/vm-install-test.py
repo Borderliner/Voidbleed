@@ -216,8 +216,8 @@ def main():
     if args.reuse:
         workdir = os.path.abspath(args.reuse)
     else:
-        if not args.config:
-            raise SystemExit("--config is required unless --reuse is given")
+        if not args.config and not args.live_script:
+            raise SystemExit("--config is required unless --reuse or --live-script is given")
         # Not /tmp: it is often tmpfs, and the disk image receives a whole install.
         os.makedirs(os.path.join(ROOT, "build"), exist_ok=True)
         workdir = tempfile.mkdtemp(prefix="vm-work-", dir=os.path.join(ROOT, "build"))
@@ -267,7 +267,7 @@ curl -fsS --data-binary @/tmp/run.out {base}/upload/run.out
 poweroff
 """.encode()
 
-    if args.reuse and args.live_script:
+    if args.live_script:
         files["run.sh"] = (f"exec >/tmp/run.out 2>&1\nset -x\nBASE={base}\n" +
                            open(args.live_script).read() +
                            f"\ncurl -fsS --data-binary @/tmp/run.out {base}/upload/run.out\npoweroff\n").encode()
