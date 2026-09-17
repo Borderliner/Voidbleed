@@ -72,6 +72,12 @@ stage() {
             ;;
         voidbleed-desktop-config) cp -a "$root/overlays/desktop" "$dest/files/overlay" ;;
         voidbleed-nvidia-config)  cp -a "$root/overlays/nvidia" "$dest/files/overlay" ;;
+        voidbleed-installer)
+            log "building the installer binary"
+            (cd "$root/installer" && CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" \
+                -o "$dest/files/voidbleed-installer" ./cmd/voidbleed-installer)
+            cp -a "$root/catalog" "$dest/files/catalog"
+            ;;
     esac
     grep -rlZ -e '@REPO_URL@' -e '@HOMEPAGE@' -e '@MAINTAINER@' "$dest" 2>/dev/null \
         | xargs -0 -r sed -i \

@@ -106,7 +106,7 @@ cp "$root"/packages/keys/*.plist keys/
 # ── package and service sets from the catalog ──────────────────────────────
 catalog="$root/scripts/catalog.py"
 mapfile -t groups < <(grep -vE '^[[:space:]]*(#|$)' "$root/iso/live-groups.txt")
-packages=(voidbleed-desktop)
+packages=(voidbleed-desktop voidbleed-installer)
 mapfile -t -O ${#packages[@]} packages < <("$catalog" list defaults.txt)
 mapfile -t -O ${#packages[@]} packages < <("$catalog" group packages "${groups[@]}")
 services=()
@@ -118,6 +118,14 @@ kernel="$("$catalog" kernel)"
 log "kernel: $kernel"
 log "packages: ${packages[*]}"
 log "services: ${services[*]}"
+
+# Generated live-only files: the Voidbleed repository (network installs and
+# software missing from the image) and the optional groups baked in, which the
+# installer removes again when they aren't selected.
+generated="$work/generated-include"
+mkdir -p "$generated/usr/share/voidbleed"
+cp -a "$repo" "$generated/usr/share/voidbleed/repo"
+printf '%s\n' "${groups[@]}" >"$generated/usr/share/voidbleed/live-groups.txt"
 
 [ "$prepare_only" = 1 ] && { log "prepared $work (--prepare-only)"; exit 0; }
 
@@ -134,6 +142,7 @@ log "services: ${services[*]}"
     -p "${packages[*]}" \
     -S "${services[*]}" \
     -I "$root/iso/include" \
+    -I "$generated" \
     -x "$root/iso/postsetup.sh" \
     -C "live.shell=/usr/bin/fish"
 

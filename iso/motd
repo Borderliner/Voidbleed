@@ -3,4 +3,5 @@
 
   Graphical session: greetd logs you into niri automatically on VT 7.
   Console only: boot with "nomodeset" or "voidbleed.console".
+  Install: "Install Voidbleed" in the launcher, or: sudo voidbleed-installer
 

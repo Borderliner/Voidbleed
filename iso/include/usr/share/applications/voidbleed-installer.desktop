@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Install Voidbleed
+GenericName=System installer
+Comment=Install Voidbleed on this computer
+Icon=voidbleed-logo
+Exec=ghostty --title="Install Voidbleed" -e sudo voidbleed-installer
+Terminal=false
+Categories=System;
+Keywords=install;installer;setup;disk;
