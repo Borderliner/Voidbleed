@@ -1,0 +1,19 @@
+#!/bin/sh
+# Voidbleed first boot: finish setup that needs the internet (Flathub apps
+# chosen in an offline install), then disable this service.
+exec 2>&1
+
+pending=/var/lib/voidbleed/firstboot-flatpaks
+flathub=https://dl.flathub.org/repo/flathub.flatpakrepo
+
+until curl -fsI --max-time 10 https://dl.flathub.org >/dev/null 2>&1; do
+    sleep 30
+done
+
+flatpak remote-add --system --if-not-exists flathub "$flathub" || { sleep 300; exit 1; }
+if [ -s "$pending" ]; then
+    xargs -r flatpak install --system --noninteractive -y flathub <"$pending" || { sleep 300; exit 1; }
+fi
+
+rm -f "$pending" /etc/runit/runsvdir/default/voidbleed-firstboot
+exec pause
