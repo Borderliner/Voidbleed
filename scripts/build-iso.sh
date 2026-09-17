@@ -115,6 +115,12 @@ mapfile -t -O ${#services[@]} services < <("$catalog" group services "${groups[@
 
 kernel="$("$catalog" kernel)"
 
+# Fail here rather than minutes into mklive if a package wasn't built.
+for pkg in voidbleed-desktop voidbleed-installer; do
+    xbps-query -i --repository="$repo" -R -p pkgver "$pkg" >/dev/null 2>&1 ||
+        die "$pkg is missing from $repo; run: scripts/build-packages.sh $pkg"
+done
+
 log "kernel: $kernel"
 log "packages: ${packages[*]}"
 log "services: ${services[*]}"
