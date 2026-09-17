@@ -1,0 +1,26 @@
+palette = "noctalia"
+# Voidbleed — Starship prompt
+# Noctalia rewrites the marked palette block below when the color scheme changes.
+
+add_newline = true
+
+[character]
+success_symbol = "[❯](bold red)"
+error_symbol = "[❯](bold yellow)"
+
+[directory]
+style = "bold red"
+truncation_length = 4
+
+[git_branch]
+style = "bold magenta"
+
+[cmd_duration]
+style = "yellow"
+
+# >>> NOCTALIA STARSHIP PALETTE >>>
+[palettes.noctalia]
+red = "#e8313f"
+yellow = "#e8b35a"
+magenta = "#c77fba"
+# <<< NOCTALIA STARSHIP PALETTE <<<

@@ -1,0 +1,8 @@
+NAME="Voidbleed"
+PRETTY_NAME="Voidbleed"
+ID="voidbleed"
+ID_LIKE="void"
+BUILD_ID="rolling"
+ANSI_COLOR="1;38;2;232;49;63"
+DOCUMENTATION_URL="https://docs.voidlinux.org/"
+LOGO="voidbleed-logo"

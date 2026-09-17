@@ -1,0 +1,13 @@
+// Voidbleed: let active local wheel users sync their Noctalia theme to the
+// login screen without a password prompt (the action defaults to auth_admin).
+polkit.addRule(function (action, subject) {
+  if (
+    action.id == "org.noctalia.greeter.apply-appearance" &&
+    action.lookup("program") == "/usr/bin/noctalia-greeter-apply-appearance" &&
+    subject.isInGroup("wheel") &&
+    subject.local &&
+    subject.active
+  ) {
+    return polkit.Result.YES;
+  }
+});

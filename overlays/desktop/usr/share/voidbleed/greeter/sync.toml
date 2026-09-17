@@ -1,0 +1,49 @@
+# Voidbleed seed for /var/lib/noctalia-greeter/sync.toml.
+# Installed by voidbleed-desktop-config when the greeter has no palette yet;
+# greeter sync keeps it matched to the user's theme.
+
+[appearance]
+corner_radius_scale = 1.0
+font_family = "Ubuntu"
+scheme = "Synced"
+theme_mode = "dark"
+
+    [appearance.palette]
+    error = "#FFC247"
+    hover = "#B01F2D"
+    on_error = "#140709"
+    on_hover = "#FFF1F2"
+    on_primary = "#140709"
+    on_secondary = "#140709"
+    on_surface = "#F3E7E8"
+    on_surface_variant = "#C9B1B3"
+    on_tertiary = "#140709"
+    outline = "#5E3A3F"
+    primary = "#E8313F"
+    secondary = "#FF8A85"
+    shadow = "#000000"
+    surface = "#0E090A"
+    surface_variant = "#211416"
+    tertiary = "#F0A35E"
+
+    [appearance.wallpaper]
+    fill_mode = "crop"
+    path = "/usr/share/backgrounds/voidbleed/voidbleed1.png"
+
+[session]
+last = "Niri"
+
+    [[session.actions]]
+    action = "lock"
+
+    [[session.actions]]
+    action = "logout"
+
+    [[session.actions]]
+    action = "lock_and_suspend"
+
+    [[session.actions]]
+    action = "reboot"
+
+    [[session.actions]]
+    action = "shutdown"

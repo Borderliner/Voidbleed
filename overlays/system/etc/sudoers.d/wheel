@@ -1,0 +1,2 @@
+# Voidbleed: members of wheel may run any command. Must be installed mode 0440.
+%wheel ALL=(ALL:ALL) ALL

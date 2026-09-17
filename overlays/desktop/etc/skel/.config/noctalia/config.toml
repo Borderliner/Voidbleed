@@ -1,0 +1,71 @@
+# Voidbleed — Noctalia defaults
+#
+# Noctalia merges every *.toml in this folder, then applies
+# ~/.local/state/noctalia/settings.toml (written by the Settings window) on top.
+# Reference for every key: /usr/share/examples/noctalia/example.toml
+
+[shell]
+font_family = "Ubuntu"
+polkit_agent = true
+telemetry_enabled = false
+
+    [shell.greeter_sync]
+    auto_sync = true
+
+[theme]
+mode = "dark"
+source = "wallpaper"           # colors generated from the wallpaper
+wallpaper_scheme = "vibrant"
+# For fixed brand colors instead, use the shipped palette:
+#   source = "custom"
+#   custom_palette = "Voidbleed"   # palettes/Voidbleed.json
+
+    [theme.templates]
+    builtin_ids = [ "btop", "ghostty", "gtk3", "gtk4", "kcolorscheme", "niri", "qt", "starship" ]
+
+[wallpaper]
+directory = "/usr/share/backgrounds/voidbleed"
+
+    [wallpaper.default]
+    path = "/usr/share/backgrounds/voidbleed/voidbleed1.png"
+
+[backdrop]
+enabled = true
+
+[nightlight]
+enabled = true
+temperature_day = 6800
+temperature_night = 5200
+
+[osd]
+position = "top_right"
+background_opacity = 0.9
+
+[bar.default]
+capsule = true
+margin_ends = 0
+radius_top_left = 0
+radius_top_right = 0
+start = [ "control-center", "launcher", "wallpaper", "workspaces" ]
+end = [
+    "media",
+    "tray",
+    "notifications",
+    "clipboard",
+    "network",
+    "bluetooth",
+    "volume",
+    "brightness",
+    "battery",
+    "session"
+]
+
+[widget.control-center]
+capsule = true
+color = "primary"
+glyph = "droplet"
+scale = 1.45
+
+[widget.session]
+capsule = true
+color = "error"

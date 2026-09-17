@@ -1,0 +1,17 @@
+# Voidbleed — Ghostty defaults
+# Full reference: ghostty +show-config --default --docs
+
+font-family = Ubuntu Mono
+font-size = 12
+
+window-padding-x = 10
+window-padding-y = 10
+window-decoration = false
+background-opacity = 0.92
+cursor-style = bar
+mouse-hide-while-typing = true
+confirm-close-surface = false
+shell-integration = fish
+
+# Written by Noctalia from the active color scheme (themes/noctalia).
+theme = noctalia
