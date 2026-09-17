@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=Voidbleed
+Comment=Scrollable tiling desktop: niri with Noctalia
+Exec=/usr/bin/voidbleed-session
+Type=Application
+DesktopNames=niri

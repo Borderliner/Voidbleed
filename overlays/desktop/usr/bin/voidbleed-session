@@ -1,0 +1,7 @@
+#!/bin/sh
+# Start the Voidbleed desktop with a session D-Bus.
+#
+# Greeters launch the Exec line of a wayland-sessions entry as a program, so
+# niri's own entry ("dbus-run-session niri --session") can lose its wrapper and
+# niri then hangs in dbus-launch --autolaunch with no bus to talk to.
+exec dbus-run-session niri --session

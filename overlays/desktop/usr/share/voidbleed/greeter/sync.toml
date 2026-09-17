@@ -31,7 +31,7 @@ theme_mode = "dark"
     path = "/usr/share/backgrounds/voidbleed/voidbleed1.png"
 
 [session]
-last = "Niri"
+last = "Voidbleed"
 
     [[session.actions]]
     action = "lock"

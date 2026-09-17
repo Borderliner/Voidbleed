@@ -12,7 +12,7 @@ cat >"$ROOTFS/etc/greetd/config.toml" <<CONFIG
 vt = 7
 
 [initial_session]
-command = "dbus-run-session niri --session"
+command = "/usr/bin/voidbleed-session"
 user = "$LIVE_USER"
 
 [default_session]
