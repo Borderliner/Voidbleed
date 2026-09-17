@@ -57,8 +57,9 @@ else
 fi
 
 echo "install config packages into a scratch root"
+# The icon theme is large; install it too so its files are checked.
 if xi -y bash coreutils grep sed findutils shadow \
-        voidbleed-config voidbleed-desktop-config >"$tmp/install.txt" 2>&1; then
+        voidbleed-config voidbleed-desktop-config reversal-red-icon-theme xcursor-vanilla-dmz-aa >"$tmp/install.txt" 2>&1; then
     pass "transaction completed"
 else
     fail "transaction completed"; tail -20 "$tmp/install.txt"
@@ -82,6 +83,10 @@ check "greetd uses the Noctalia greeter"       grep -q noctalia-greeter-session 
 check "greeter palette seeded"                 grep -q 'primary = "#E8313F"' "$t/var/lib/noctalia-greeter/sync.toml"
 check "skel niri config"                       test -f "$t/etc/skel/.config/niri/config.kdl"
 check "skel Voidbleed palette"                 test -f "$t/etc/skel/.config/noctalia/palettes/Voidbleed.json"
+check "skel uses the Reversal icon theme"      grep -q '^gtk-icon-theme-name=Reversal-red-dark$' "$t/etc/skel/.config/gtk-3.0/settings.ini"
+check "skel uses the white DMZ cursor"         grep -q '^gtk-cursor-theme-name=Vanilla-DMZ-AA$' "$t/etc/skel/.config/gtk-4.0/settings.ini"
+check "Qt uses the same icon theme"            grep -q '^icon_theme=Reversal-red-dark$' "$t/etc/skel/.config/qt6ct/qt6ct.conf"
+check "niri sets the white cursor"             grep -q 'xcursor-theme "Vanilla-DMZ-AA"' "$t/etc/skel/.config/niri/config.kdl"
 check "skel ghostty config"                    test -f "$t/etc/skel/.config/ghostty/config"
 check "wallpaper installed"                    test -s "$t/usr/share/backgrounds/voidbleed/voidbleed1.png"
 check "logo installed"                         test -s "$t/usr/share/pixmaps/voidbleed-logo.png"
@@ -97,6 +102,8 @@ check "session wrapper starts a dbus session"  grep -q 'exec dbus-run-session ni
 check "session wrapper is executable"          test -x "$t/usr/bin/voidbleed-session"
 check "Voidbleed session entry installed"      grep -q '^Exec=/usr/bin/voidbleed-session' "$t/usr/share/wayland-sessions/voidbleed.desktop"
 check "greeter sync polkit rule"               grep -q 'org.noctalia.greeter.apply-appearance' "$t/usr/share/polkit-1/rules.d/49-noctalia-greeter-sync.rules"
+check "Reversal icon theme installed"          test -f "$t/usr/share/icons/Reversal-red-dark/index.theme"
+check "white DMZ cursor installed"             test -d "$t/usr/share/icons/Vanilla-DMZ-AA/cursors"
 check "PipeWire links present"                 test -L "$t/etc/pipewire/pipewire.conf.d/20-pipewire-pulse.conf"
 check "_greeter account created by greetd"     grep -q '^_greeter:' "$t/etc/passwd"
 

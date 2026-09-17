@@ -30,5 +30,5 @@ mdadm	installer adds it only for RAID layouts (phase 4)
 binutils	dropped: build tool; dkms pulls what it needs
 glxinfo	dropped: diagnostic tool, install on demand
 linux	already pulled in by base-system
-paper-icon-theme	replaced by papirus-icon-theme
+paper-icon-theme	replaced by reversal-red-icon-theme
 uv	personal developer tool

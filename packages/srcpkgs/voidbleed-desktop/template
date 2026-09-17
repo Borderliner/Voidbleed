@@ -1,7 +1,7 @@
 # Template file for 'voidbleed-desktop'
 pkgname=voidbleed-desktop
 version=20260916
-revision=1
+revision=2
 metapackage=yes
 short_desc="Voidbleed desktop meta package (niri + Noctalia)"
 maintainer="@MAINTAINER@"
@@ -34,8 +34,9 @@ depends="
  wl-mirror
  jq
  adw-gtk-theme
- papirus-icon-theme
+ reversal-red-icon-theme
  xcursor-vanilla-dmz
+ xcursor-vanilla-dmz-aa
  ttf-ubuntu-font-family
  noto-fonts-ttf
  noto-fonts-emoji

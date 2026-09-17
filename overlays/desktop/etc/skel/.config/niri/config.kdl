@@ -12,10 +12,13 @@ spawn-at-startup "noctalia"
 environment {
     QT_QPA_PLATFORM "wayland"
     QT_QPA_PLATFORMTHEME "qt6ct"
+    // Qt and X11 apps read the cursor from the environment.
+    XCURSOR_THEME "Vanilla-DMZ-AA"
+    XCURSOR_SIZE "24"
 }
 
 cursor {
-    xcursor-theme "Vanilla-DMZ"
+    xcursor-theme "Vanilla-DMZ-AA"
     xcursor-size 24
 
     hide-when-typing
@@ -134,6 +137,12 @@ window-rule {
 window-rule {
     geometry-corner-radius 10
     clip-to-geometry true
+}
+
+// The installer needs room: open it maximized.
+window-rule {
+    match app-id=r#"^com\.mitchellh\.ghostty$"# title="^Install Voidbleed$"
+    open-maximized true
 }
 
 // Floating Noctalia settings window.

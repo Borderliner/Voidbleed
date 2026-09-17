@@ -1,0 +1,16 @@
+# Template file for 'reversal-red-icon-theme'
+# files/Reversal-red.tar.xz is staged from packages/assets by
+# scripts/build-packages.sh.
+pkgname=reversal-red-icon-theme
+version=20260917
+revision=1
+short_desc="Reversal icon theme, red variants (light and dark)"
+maintainer="@MAINTAINER@"
+license="GPL-3.0-or-later"
+homepage="https://github.com/yeyushengfan258/Reversal-icon-theme"
+
+do_install() {
+	vmkdir usr/share/icons
+	bsdtar -xf "${FILESDIR}/Reversal-red.tar.xz" -C "${DESTDIR}/usr/share/icons"
+	vlicense "${DESTDIR}/usr/share/icons/Reversal-red/COPYING"
+}

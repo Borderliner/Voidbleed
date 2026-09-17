@@ -72,6 +72,9 @@ stage() {
             ;;
         voidbleed-desktop-config) cp -a "$root/overlays/desktop" "$dest/files/overlay" ;;
         voidbleed-nvidia-config)  cp -a "$root/overlays/nvidia" "$dest/files/overlay" ;;
+        reversal-red-icon-theme)
+            cp -a "$root/packages/assets/Reversal-red.tar.xz" "$dest/files/"
+            ;;
         voidbleed-installer)
             log "building the installer binary"
             (cd "$root/installer" && CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" \
