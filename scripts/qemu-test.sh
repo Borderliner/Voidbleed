@@ -6,7 +6,7 @@
 #   (no options)        UEFI, KVM, virtio GPU with OpenGL in a GTK window
 #   --no-gl             virtio GPU without host OpenGL (software rendering in the guest)
 #   --bios              legacy BIOS boot instead of UEFI
-#   --disk              attach build/test-disk.qcow2 (created, 32G) for installer tests
+#   --disk              attach build/test-disk.img (sparse, 32G) for installer tests
 #   --shots N[,N...]    headless: take screenshots N seconds after start into
 #                       build/screenshots/, then power off
 #   --rendernode PATH   host render node for virgl (default: first non-NVIDIA one)
@@ -73,9 +73,9 @@ if [ "$bios" = 0 ]; then
 fi
 
 if [ "$disk" = 1 ]; then
-    img="$root/build/test-disk.qcow2"
-    [ -f "$img" ] || qemu-img create -f qcow2 "$img" 32G >/dev/null
-    args+=(-drive "file=$img,if=virtio,format=qcow2")
+    img="$root/build/test-disk.img"
+    [ -f "$img" ] || truncate -s 32G "$img"
+    args+=(-drive "file=$img,if=virtio,format=raw")
 fi
 
 if [ -z "$shots" ]; then
