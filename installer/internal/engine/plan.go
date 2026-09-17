@@ -21,6 +21,7 @@ type Paths struct {
 	LiveConf    string // mklive's live user record
 	XbpsKeys    string
 	XbpsConfDir string
+	Log         string // install log, copied into the target at the end
 }
 
 func DefaultPaths() Paths {
@@ -32,6 +33,7 @@ func DefaultPaths() Paths {
 		LiveConf:    "/etc/default/live.conf",
 		XbpsKeys:    "/var/db/xbps/keys",
 		XbpsConfDir: "/usr/share/xbps.d",
+		Log:         "/var/log/voidbleed-install.log",
 	}
 }
 

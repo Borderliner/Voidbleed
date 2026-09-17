@@ -645,6 +645,12 @@ func bootloader(ctx context.Context, x *Exec) error {
 }
 
 func finish(ctx context.Context, x *Exec) error {
+	p := x.Plan
+	if p.Paths.Log != "" && x.R.Exists(p.Paths.Log) {
+		if err := x.run(ctx, "install", "-Dm600", p.Paths.Log, p.T("var/log/voidbleed-install.log")); err != nil {
+			return err
+		}
+	}
 	if err := x.run(ctx, "sync"); err != nil {
 		return err
 	}
