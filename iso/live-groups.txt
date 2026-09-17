@@ -1,0 +1,9 @@
+# Optional groups (catalog/optional.toml) baked into the live ISO, on top of
+# voidbleed-desktop and catalog/defaults.txt. Proprietary NVIDIA stays out:
+# the live session uses nouveau/modesetting so it boots anywhere.
+
+gpu-intel
+gpu-amd
+bluetooth
+power-ppd
+firefox

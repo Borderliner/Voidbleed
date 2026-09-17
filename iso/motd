@@ -1,0 +1,6 @@
+
+  Voidbleed live — Bleed into the void.
+
+  Graphical session: greetd logs you into niri automatically on VT 7.
+  Console only: boot with "nomodeset" or "voidbleed.console".
+
