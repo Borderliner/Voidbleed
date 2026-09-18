@@ -113,10 +113,15 @@ publish() {
             cp -f "$f" "$repo/"
             # A rebuilt package needs a fresh signature; --sign-pkg keeps old ones.
             rm -f "$repo/$(basename "$f").sig2"
+            # Voidbleed's packages are rebuilt without a revision bump, so a
+            # copy left in the download cache no longer matches the index.
+            rm -f "$root/build/xbps-cache/$(basename "$f")"*
         done
     done
-    # Register first (newest version wins), then prune what is no longer indexed.
-    xbps-rindex -a "$repo"/*.xbps
+    # Register first (newest version wins), then prune what is no longer
+    # indexed. -f because a rebuild at the same revision keeps its filename:
+    # without it the index would still carry the hash of the previous build.
+    xbps-rindex -f -a "$repo"/*.xbps
     xbps-rindex -r "$repo"
     xbps-rindex --privkey "$VOIDBLEED_SIGNING_KEY" --sign --signedby "$VOIDBLEED_MAINTAINER" "$repo"
     xbps-rindex --privkey "$VOIDBLEED_SIGNING_KEY" --sign-pkg "$repo"/*.xbps
