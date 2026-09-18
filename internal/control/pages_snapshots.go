@@ -35,6 +35,9 @@ func newSnapshotsPage() *snapshotsPage {
 	}
 }
 
+// Typing reports whether a filter or a field has the keyboard.
+func (p *snapshotsPage) Typing() bool { return p.naming || p.table.Typing() }
+
 func (p *snapshotsPage) Label() string { return "Snapshots" }
 func (p *snapshotsPage) Title() (string, string) {
 	return "Snapshots", "read-only copies of the root subvolume"

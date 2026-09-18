@@ -272,10 +272,33 @@ func TestEverySectionRenders(t *testing.T) {
 	}
 }
 
+// A filter has to be able to contain the letters the program uses for its own
+// keys: "r" reloads, "q" quits, the digits jump between sections -- and
+// filtering for "firefox" or "grub" types every one of them.
+func TestFilterOwnsTheKeyboardWhileOpen(t *testing.T) {
+	m := newTestModel(t)
+	onPage(t, m, "Packages")
+	drive(t, m, key("/"), key("g"), key("h"), key("o"), key("s"))
+	page := m.pages[m.cur].(*packagesPage)
+	if got := page.table.Filtering(); got != "ghos" {
+		t.Fatalf("typed \"ghos\", filter holds %q", got)
+	}
+	if m.over == overlayQuit {
+		t.Error("typing a q asked to quit")
+	}
+	drive(t, m, key("t"), key("t"), key("y"))
+	if got := page.table.Filtering(); got != "ghostty" {
+		t.Errorf("filter holds %q", got)
+	}
+	if !strings.Contains(view(m), "ghostty") {
+		t.Error("the filtered package is not shown")
+	}
+}
+
 func TestFilterNarrowsTheList(t *testing.T) {
 	m := newTestModel(t)
 	onPage(t, m, "Packages")
-	drive(t, m, key("/"), key("n"), key("i"))
+	drive(t, m, key("/"), key("n"), key("i"), key("r"))
 	out := view(m)
 	if !strings.Contains(out, "1 match") || !strings.Contains(out, "niri") {
 		t.Errorf("filter did not narrow to niri:\n%s", out)

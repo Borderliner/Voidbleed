@@ -46,6 +46,9 @@ func newFlatpakPage() *flatpakPage {
 	}}
 }
 
+// Typing reports whether a filter or a field has the keyboard.
+func (p *flatpakPage) Typing() bool { return p.table.Typing() }
+
 func (p *flatpakPage) Label() string { return "Flatpak" }
 
 func (p *flatpakPage) Title() (string, string) {

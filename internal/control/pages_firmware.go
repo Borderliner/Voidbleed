@@ -28,6 +28,9 @@ func newFirmwarePage() *firmwarePage {
 	}}
 }
 
+// Typing reports whether a filter or a field has the keyboard.
+func (p *firmwarePage) Typing() bool { return p.table.Typing() }
+
 func (p *firmwarePage) Label() string { return "Firmware" }
 func (p *firmwarePage) Title() (string, string) {
 	return "Firmware", "updates from the LVFS, through fwupd"

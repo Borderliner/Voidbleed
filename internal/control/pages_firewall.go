@@ -30,6 +30,9 @@ func newFirewallPage() *firewallPage {
 	}
 }
 
+// Typing reports whether a filter or a field has the keyboard.
+func (p *firewallPage) Typing() bool { return p.adding || p.table.Typing() }
+
 func (p *firewallPage) Label() string           { return "Firewall" }
 func (p *firewallPage) Title() (string, string) { return "Firewall", "ufw, the simple one" }
 

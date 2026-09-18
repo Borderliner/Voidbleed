@@ -65,6 +65,9 @@ func newPackagesPage() *packagesPage {
 	}
 }
 
+// Typing reports whether a filter or a field has the keyboard.
+func (p *packagesPage) Typing() bool { return p.table.Typing() }
+
 func (p *packagesPage) Label() string { return "Packages" }
 
 func (p *packagesPage) Title() (string, string) {

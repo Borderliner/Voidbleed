@@ -31,6 +31,9 @@ func newServicesPage() *servicesPage {
 	}}
 }
 
+// Typing reports whether a filter or a field has the keyboard.
+func (p *servicesPage) Typing() bool { return p.table.Typing() }
+
 func (p *servicesPage) Label() string           { return "Services" }
 func (p *servicesPage) Title() (string, string) { return "Services", "runit, from /etc/sv" }
 
@@ -175,6 +178,10 @@ func (p *servicesPage) View(m *Model, width, height int) string {
 				detail += s.About + "\n"
 			}
 			detail += "\n"
+			if s.Unowned {
+				detail += "No installed package owns this service: it was left behind when the " +
+					"package that brought it was removed, and nothing will start it unless you do.\n\n"
+			}
 			if s.Enabled {
 				detail += "enabled: starts at boot\n"
 			} else {

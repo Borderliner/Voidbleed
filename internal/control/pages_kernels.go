@@ -41,6 +41,9 @@ func newKernelsPage() *kernelsPage {
 	}}
 }
 
+// Typing reports whether a filter or a field has the keyboard.
+func (p *kernelsPage) Typing() bool { return p.table.Typing() }
+
 func (p *kernelsPage) Label() string { return "Kernels" }
 
 func (p *kernelsPage) Title() (string, string) {

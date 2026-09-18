@@ -32,6 +32,13 @@ type Options struct {
 // Binding is one key hint in the footer.
 type Binding struct{ Key, Desc string }
 
+// typingPage is a page that is capturing text. While it is, the keys the
+// program otherwise keeps for itself -- r to reload, q to quit, the section
+// numbers -- belong to whatever is being typed into.
+type typingPage interface {
+	Typing() bool
+}
+
 // Page is one section of the control centre.
 type Page interface {
 	// Label is the sidebar entry; Title and Subtitle head the page.
@@ -236,8 +243,18 @@ func (m *Model) onKey(msg tea.KeyPressMsg) tea.Cmd {
 		return nil
 	}
 
+	if key == "ctrl+c" {
+		m.over = overlayQuit
+		return nil
+	}
+	// A filter or a text field owns every printable key while it is open,
+	// or filtering for "firefox" would reload the page at the r.
+	if page, ok := m.pages[m.cur].(typingPage); ok && page.Typing() {
+		return m.pages[m.cur].Update(m, msg)
+	}
+
 	switch key {
-	case "ctrl+c", "q":
+	case "q":
 		m.over = overlayQuit
 		return nil
 	case "tab", "shift+tab", "ctrl+n", "ctrl+p":
