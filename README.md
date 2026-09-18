@@ -14,6 +14,7 @@ red on black, installed by a TUI that fits on an 80×24 console.
 ![Wayland](https://img.shields.io/badge/session-niri%20%2B%20Noctalia%20v5-e8313f?style=flat-square)
 ![Kernel](https://img.shields.io/badge/kernel-linux6.18%20pinned-e8313f?style=flat-square)
 ![Installer](https://img.shields.io/badge/installer-Bubble%20Tea%20TUI-e8313f?style=flat-square)
+![Control centre](https://img.shields.io/badge/control-packages%20·%20services%20·%20firewall-e8313f?style=flat-square)
 
 <img src="docs/assets/desktop.jpg" alt="The Voidbleed desktop: niri and Noctalia" width="100%">
 
@@ -107,6 +108,30 @@ source = "network"
 groups = ["gpu-nvidia", "flatpak", "firefox"]
 ```
 
+## The control centre
+
+`voidbleed-control` is the other half: one interface for what a Void machine
+otherwise needs a page of remembered commands for. Same palette, same glyphs,
+same card as the installer.
+
+| Section | What it does |
+|---|---|
+| **Packages** | installed, waiting updates and repository search in one list, with xbps's own description in a side pane; install, remove, update, sync, clean the cache and orphans |
+| **Flatpak** | applications and runtimes, updates, search and install from Flathub, prune what nothing uses |
+| **Services** | every runit service, enabled or not, with live state; enable, disable, start, stop, restart |
+| **Firmware** | fwupd devices and the updates waiting for them, with the version spelled out before anything is written |
+| **Appearance** | GTK, Qt, icons, cursor and fonts set together — written to gsettings *and* the toolkit files, because the portal reads one and everything else reads the other |
+| **Firewall** | ufw: on or off, default policy, and the rule list |
+
+Reading is unprivileged. Anything that changes the machine names itself, asks
+for the sudo password once, and streams its output where you can watch it;
+removals and firmware ask before they start.
+
+```sh
+voidbleed-control          # manage this machine
+voidbleed-control --demo   # the whole interface against canned data, changing nothing
+```
+
 ## Build it
 
 Needs a Void machine with `xbps-src` dependencies, `qemu-system-amd64` and
@@ -155,7 +180,7 @@ the ISO, the installed system and the tests cannot drift apart.
 | `packages/srcpkgs/` | xbps-src templates for the `voidbleed-*` packages |
 | `packages/fallback/` | Unbuilt templates, in case the voiders repo disappears |
 | `iso/` | Live ISO: package groups, live-only files, postsetup hook |
-| `cmd/`, `internal/` | The Go programs: the installer's engine, TUI and CLI |
+| `cmd/`, `internal/` | The two Go programs — installer and control centre — and the engine, system and theme packages they share |
 | `scripts/` | Catalog checks, package and ISO builds, repo tests, QEMU harnesses |
 | `docs/` | Branding and per-phase notes |
 
