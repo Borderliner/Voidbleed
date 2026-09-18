@@ -18,6 +18,7 @@ type Flatpak struct {
 	Installation string `json:"installation"` // "system" or "user"
 	Runtime      bool   // platforms and runtimes, not applications
 	Update       bool   // an update is waiting
+	NewVersion   string // the version waiting, when the remote names one
 }
 
 // FlatpakRemote is a configured source, usually just Flathub.
@@ -43,12 +44,13 @@ func (c *Client) Flatpaks(ctx context.Context) ([]Flatpak, error) {
 	// remote-ls --updates reaches the network; a machine that is offline
 	// still gets its list, just without the update marks.
 	if updates, err := c.flatpakList(ctx, "remote-ls", "--updates", "-j"); err == nil {
-		waiting := make(map[string]bool, len(updates))
+		waiting := make(map[string]string, len(updates))
 		for _, u := range updates {
-			waiting[u.ID] = true
+			waiting[u.ID] = u.Version // runtimes often report no version
 		}
 		for i := range apps {
-			apps[i].Update = waiting[apps[i].ID]
+			version, found := waiting[apps[i].ID]
+			apps[i].Update, apps[i].NewVersion = found, version
 		}
 	}
 	sort.Slice(apps, func(i, j int) bool {

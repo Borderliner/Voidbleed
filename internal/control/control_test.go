@@ -7,6 +7,18 @@ import (
 	tea "charm.land/bubbletea/v2"
 )
 
+// onPage walks the sections until the named one is showing.
+func onPage(t *testing.T, m *Model, label string) {
+	t.Helper()
+	for i := 0; i < len(m.pages); i++ {
+		if m.pages[m.cur].Label() == label {
+			return
+		}
+		drive(t, m, key("tab"))
+	}
+	t.Fatalf("no section called %q", label)
+}
+
 // drive feeds the model a message and runs whatever commands come back, so a
 // test sees the same state a person would after the interface settled.
 func drive(t *testing.T, m *Model, msgs ...tea.Msg) {
@@ -163,5 +175,27 @@ func TestServicesReadsTheRealLayout(t *testing.T) {
 	// what matters is that the page renders a list and names the directory.
 	if out := view(m); !strings.Contains(out, "Services") {
 		t.Errorf("services page did not render:\n%s", out)
+	}
+}
+
+// Packages and Flatpak both answer "what is here, what is out of date, what
+// could be here"; they should do it the same way.
+func TestFlatpakHasAnUpdatesView(t *testing.T) {
+	m := newTestModel(t)
+	onPage(t, m, "Flatpak")
+	if !strings.Contains(view(m), "Steam") {
+		t.Fatalf("installed view is empty:\n%s", view(m))
+	}
+	drive(t, m, key("right")) // installed -> updates
+	out := view(m)
+	if !strings.Contains(out, "updates") {
+		t.Errorf("no updates view:\n%s", out)
+	}
+	// The demo machine has one waiting update, for GIMP, at 3.2.8.
+	if !strings.Contains(out, "GIMP") || !strings.Contains(out, "3.2.8") {
+		t.Errorf("the updates view does not show what is waiting:\n%s", out)
+	}
+	if strings.Contains(out, "Steam") {
+		t.Errorf("the updates view lists an application with no update:\n%s", out)
 	}
 }
