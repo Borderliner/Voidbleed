@@ -9,6 +9,7 @@ import (
 
 	"voidbleed/internal/catalog"
 	"voidbleed/internal/config"
+	"voidbleed/internal/theme"
 )
 
 func testState(t *testing.T) *state {
@@ -20,7 +21,7 @@ func testState(t *testing.T) *state {
 		t.Fatal(err)
 	}
 	st := &state{
-		opts: Options{Catalog: cat, Demo: true}, styles: newStyles(unicodeGlyphs), cat: cat,
+		opts: Options{Catalog: cat, Demo: true}, styles: newStyles(theme.Unicode), cat: cat,
 		cfg: config.Default(), selected: map[string]bool{}, detected: map[string]bool{},
 	}
 	st.facts = demoFacts()

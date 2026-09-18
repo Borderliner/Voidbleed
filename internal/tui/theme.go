@@ -1,68 +1,36 @@
 package tui
 
 import (
-	"os"
 	"strings"
 
 	"charm.land/lipgloss/v2"
+
+	"voidbleed/internal/theme"
 )
 
-// Voidbleed palette (docs/BRANDING.md). Lip Gloss downsamples for the Linux
-// console's 16 colours.
+// The look lives in internal/theme, shared with the control centre. The
+// installer's screens were written against these short names, and they read
+// better in dense layout code, so they stay.
 var (
-	colPrimary   = lipgloss.Color("#e8313f")
-	colSecondary = lipgloss.Color("#ff8a85")
-	colTertiary  = lipgloss.Color("#f0a35e")
-	colWarn      = lipgloss.Color("#ffc247")
-	colSurface   = lipgloss.Color("#0e090a")
-	colSurface2  = lipgloss.Color("#211416")
-	colSelect    = lipgloss.Color("#3a1519")
-	colText      = lipgloss.Color("#f3e7e8")
-	colMuted     = lipgloss.Color("#c9b1b3")
-	colDim       = lipgloss.Color("#8a6f73")
-	colOutline   = lipgloss.Color("#5e3a3f")
-	colOK        = lipgloss.Color("#8fc07f")
+	colPrimary   = theme.Primary
+	colSecondary = theme.Secondary
+	colTertiary  = theme.Tertiary
+	colWarn      = theme.Warn
+	colSurface   = theme.Surface
+	colSurface2  = theme.Surface2
+	colSelect    = theme.Select
+	colText      = theme.Text
+	colMuted     = theme.Muted
+	colDim       = theme.Dim
+	colOutline   = theme.Outline
+	colOK        = theme.OK
 )
 
-type glyphSet struct {
-	Current, Done, Todo, Bullet     string
-	Check, Uncheck, Radio, Unradio  string
-	Cursor, Arrow, Lock, Warn, Fail string
-	Bar, BarEmpty, Rule, Ellipsis   string
-	UpDown, LeftRight, Sep          string
-	Spinner                         []string
-	ASCII                           bool
-}
+type glyphSet = theme.GlyphSet
 
-var unicodeGlyphs = glyphSet{
-	Current: "●", Done: "✓", Todo: "○", Bullet: "•",
-	Check: "■", Uncheck: "□", Radio: "◉", Unradio: "○",
-	Cursor: "▌", Arrow: "›", Lock: "encrypted", Warn: "▲", Fail: "✗",
-	Bar: "━", BarEmpty: "━", Rule: "─", Ellipsis: "…",
-	UpDown: "↑↓", LeftRight: "←→", Sep: "•",
-	Spinner: []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"},
-}
+func detectGlyphs() glyphSet { return theme.Detect() }
 
-// The Linux framebuffer console font lacks most symbols.
-var asciiGlyphs = glyphSet{
-	Current: ">", Done: "*", Todo: "-", Bullet: "-",
-	Check: "[x]", Uncheck: "[ ]", Radio: "(*)", Unradio: "( )",
-	Cursor: ">", Arrow: ">", Lock: "encrypted", Warn: "!", Fail: "x",
-	Bar: "#", BarEmpty: ".", Rule: "-", Ellipsis: "...",
-	UpDown: "up/down", LeftRight: "left/right", Sep: "|",
-	Spinner: []string{"|", "/", "-", "\\"},
-	ASCII:   true,
-}
-
-func detectGlyphs() glyphSet {
-	if os.Getenv("TERM") == "linux" {
-		return asciiGlyphs
-	}
-	return unicodeGlyphs
-}
-
-// labelWidth is the form label column; hints align under the values.
-const labelWidth = 16
+const labelWidth = theme.LabelWidth
 
 type styles struct {
 	app, card, title, subtitle, text, muted, dim, accent, secondary, warn, ok, fail lipgloss.Style
@@ -71,75 +39,23 @@ type styles struct {
 }
 
 func newStyles(g glyphSet) styles {
-	base := lipgloss.NewStyle().Foreground(colText)
-	// The console font has square box corners but no rounded or thick ones.
-	cardBorder, dangerBorder := lipgloss.RoundedBorder(), lipgloss.ThickBorder()
-	if g.ASCII {
-		cardBorder, dangerBorder = lipgloss.NormalBorder(), lipgloss.NormalBorder()
-	}
+	s := theme.NewStyles(g)
 	return styles{
-		app:        lipgloss.NewStyle().Background(colSurface).Foreground(colText),
-		card:       lipgloss.NewStyle().Border(cardBorder).BorderForeground(colOutline).Padding(0, 2),
-		title:      base.Bold(true).Foreground(colPrimary),
-		subtitle:   base.Foreground(colMuted),
-		text:       base,
-		muted:      base.Foreground(colMuted),
-		dim:        base.Foreground(colDim),
-		accent:     base.Foreground(colPrimary).Bold(true),
-		secondary:  base.Foreground(colSecondary),
-		warn:       base.Foreground(colWarn),
-		ok:         base.Foreground(colOK),
-		fail:       base.Foreground(colPrimary).Bold(true),
-		key:        base.Foreground(colSecondary).Bold(true),
-		keyDesc:    base.Foreground(colDim),
-		selected:   base.Background(colSelect).Foreground(colText).Bold(true),
-		badge:      base.Foreground(colSurface).Background(colSecondary).Padding(0, 1),
-		badgeWarn:  base.Foreground(colSurface).Background(colWarn).Padding(0, 1),
-		input:      base.Border(lipgloss.NormalBorder(), false, false, true, false).BorderForeground(colOutline),
-		inputFocus: base.Border(lipgloss.NormalBorder(), false, false, true, false).BorderForeground(colPrimary),
-		label:      base.Foreground(colMuted).Width(labelWidth),
-		labelFocus: base.Foreground(colPrimary).Bold(true).Width(labelWidth),
-		danger:     base.Border(dangerBorder).BorderForeground(colPrimary).Padding(0, 2),
-		section:    base.Foreground(colTertiary).Bold(true),
+		app: s.App, card: s.Card, title: s.Title, subtitle: s.Subtitle,
+		text: s.Text, muted: s.Muted, dim: s.Dim, accent: s.Accent,
+		secondary: s.Secondary, warn: s.Warn, ok: s.OK, fail: s.Fail,
+		key: s.Key, keyDesc: s.KeyDesc, selected: s.Selected,
+		badge: s.Badge, badgeWarn: s.BadgeWarn,
+		input: s.Input, inputFocus: s.InputFocus,
+		label: s.Label, labelFocus: s.LabelFocus,
+		danger: s.Danger, section: s.Section,
 	}
 }
 
-// logo is voidbleed-logo.png rendered as half blocks (26×13).
-const logo = `
-        ▄▄████████▄    ▄
-      ▄████▀▀▀▀▀███▀▄▄▀
-    ▄███▀        ▄▄█▀▄▄
-   ▄███       ▄▄██▀ ████
-   ███      ▄██▀▀▄   ███
-   ███     ██▀▄██▀   ███
-   ███▄  ▄█▀  ▀▀    ▄███
-   ▀██▀▄█▀         ▄███▀
-     ▄▀▀▄▄▄     ▄▄████▀
-   ▄▀  █████████████▀
-  ▀      ▀▀▀▀██▀▀▀`
-
-// asciiLogo is the slashed ring for fonts without block elements.
-const asciiLogo = `
-   .-""""-.   /
-  /       .' /
- |      .'   |
- |    .'     |
-  \ .'      /
-  /'-.____.'
- /`
-
-const wordmark = "█ █ █▀█ █ █▀▄ █▄▄ █   █▀▀ █▀▀ █▀▄\n▀▄▀ █▄█ █ █▄▀ █▄█ █▄▄ ██▄ ██▄ █▄▀"
-
 func (m *Model) logo() string {
-	if m.glyphs.ASCII {
-		return m.st.styles.accent.Render(strings.TrimPrefix(asciiLogo, "\n"))
-	}
-	return m.st.styles.accent.Render(strings.TrimPrefix(logo, "\n"))
+	return m.st.styles.accent.Render(strings.TrimRight(theme.Logo(m.glyphs), "\n"))
 }
 
 func (m *Model) wordmark() string {
-	if m.glyphs.ASCII {
-		return m.st.styles.accent.Render("V O I D B L E E D")
-	}
-	return m.st.styles.accent.Render(wordmark)
+	return m.st.styles.accent.Render(theme.Wordmark(m.glyphs))
 }
