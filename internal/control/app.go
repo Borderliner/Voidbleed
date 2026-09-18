@@ -21,6 +21,9 @@ type Options struct {
 	// Demo answers every command from canned output: nothing on the machine
 	// is read or changed, which is how the interface is developed.
 	Demo bool
+	// NoGraphics draws the logo as block art even where the terminal could
+	// show the picture itself.
+	NoGraphics bool
 }
 
 // Binding is one key hint in the footer.
@@ -60,6 +63,11 @@ type Model struct {
 	Client *system.Client
 	Glyphs theme.GlyphSet
 	Styles theme.Styles
+	// Graphics is set when the terminal can draw the logo itself.
+	Graphics bool
+	// imageOnScreen tracks the logo placement, so it can be taken off when
+	// something else is drawn where it sits.
+	imageOnScreen bool
 
 	pages []Page
 	cur   int
@@ -99,10 +107,11 @@ func tick() tea.Cmd {
 func New(opts Options) *Model {
 	g := theme.Detect()
 	m := &Model{
-		Glyphs: g,
-		Styles: theme.NewStyles(g),
-		width:  100,
-		height: 32,
+		Glyphs:   g,
+		Styles:   theme.NewStyles(g),
+		Graphics: !opts.NoGraphics && !g.ASCII && graphicsEnv(),
+		width:    100,
+		height:   32,
 	}
 	if opts.Demo {
 		m.Client = system.NewDemo(demoRunner{})
@@ -342,6 +351,14 @@ func (m *Model) cardSize() (int, int) {
 
 func (m *Model) render() string {
 	s := m.Styles
+	// Only the overview draws the logo, and only when nothing covers it.
+	prefix := ""
+	showing := m.Graphics && m.over == overlayNone && m.pages[m.cur].Label() == "Overview"
+	if m.imageOnScreen && !showing {
+		prefix = deleteLogo()
+	}
+	m.imageOnScreen = showing
+
 	cardW, cardH := m.cardSize()
 	innerW, innerH := cardW-6, cardH-2
 
@@ -392,7 +409,7 @@ func (m *Model) render() string {
 
 	rule := s.Dim.Render(strings.Repeat(m.Glyphs.Rule, innerW))
 	card := s.Card.Width(cardW).Height(cardH).Render(header + "\n" + rule + "\n" + body + "\n" + help)
-	return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, card)
+	return prefix + lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, card)
 }
 
 func (m *Model) statusLine() string {

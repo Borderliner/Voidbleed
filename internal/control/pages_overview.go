@@ -15,6 +15,9 @@ type overviewPage struct {
 	info    system.Overview
 	loading bool
 	loaded  bool
+	// sent is the size the picture was last handed to the terminal at; it is
+	// sent again after a resize, and not otherwise.
+	sent string
 }
 
 type overviewFactsMsg struct{ info system.Overview }
@@ -93,12 +96,24 @@ func (p *overviewPage) View(m *Model, width, height int) string {
 	// boot splash. On a short terminal the logo gives way to the wordmark,
 	// and on a very short one the facts have it all.
 	logo, wordmark := theme.Logo(m.Glyphs), theme.Wordmark(m.Glyphs)
+	logoW, logoH := lipgloss.Width(logo), lipgloss.Height(logo)
+	if m.Graphics {
+		// A terminal cell is about twice as tall as it is wide, so a square
+		// picture wants half as many rows as columns.
+		logoW, logoH = 26, 13
+	}
 	bodyH := lipgloss.Height(body)
+
 	head := ""
 	switch {
-	case width >= lipgloss.Width(logo) && height >= lipgloss.Height(logo)+bodyH+3:
-		head = center(width, s.Accent.Render(logo)) + "\n" +
-			center(width, s.Accent.Render(wordmark)) + "\n\n"
+	case width >= logoW && height >= logoH+bodyH+3:
+		mark := s.Accent.Render(logo)
+		if m.Graphics {
+			key := itoa(logoW) + "x" + itoa(logoH)
+			mark = logoBox(logoW, logoH, p.sent != key)
+			p.sent = key
+		}
+		head = center(width, mark) + "\n" + center(width, s.Accent.Render(wordmark)) + "\n\n"
 	case width >= lipgloss.Width(wordmark) && height >= bodyH+2:
 		head = center(width, s.Accent.Render(wordmark)) + "\n\n"
 	}

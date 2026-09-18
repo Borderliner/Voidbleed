@@ -15,6 +15,7 @@ import (
 
 func main() {
 	demo := flag.Bool("demo", false, "answer everything from canned data; change nothing")
+	noGraphics := flag.Bool("no-graphics", false, "draw the logo as block art, never as a picture")
 	version := flag.Bool("version", false, "print the version and exit")
 	flag.Usage = func() {
 		fmt.Fprint(os.Stderr, `voidbleed-control — the Voidbleed control centre
@@ -24,6 +25,9 @@ func main() {
 
 Run it as yourself: anything that changes the machine asks for the
 administrator password when it needs one.
+
+In Ghostty, Kitty or WezTerm the logo is drawn as a picture; set
+VOIDBLEED_GRAPHICS=0 or pass --no-graphics for the block art instead.
 
 `)
 		flag.PrintDefaults()
@@ -35,7 +39,7 @@ administrator password when it needs one.
 		return
 	}
 
-	program := tea.NewProgram(control.New(control.Options{Demo: *demo}))
+	program := tea.NewProgram(control.New(control.Options{Demo: *demo, NoGraphics: *noGraphics}))
 	if _, err := program.Run(); err != nil {
 		fmt.Fprintln(os.Stderr, "voidbleed-control:", err)
 		os.Exit(1)
