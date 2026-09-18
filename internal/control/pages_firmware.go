@@ -2,6 +2,7 @@ package control
 
 import (
 	"context"
+	"strings"
 
 	tea "charm.land/bubbletea/v2"
 
@@ -90,7 +91,22 @@ func (p *firmwarePage) key(m *Model, key string) tea.Cmd {
 	switch key {
 	case "f":
 		return m.Do("refresh firmware metadata", "", true, system.FirmwareRefreshCmd())
-	case "u", "enter":
+	case "u":
+		waiting := p.waiting()
+		if len(waiting) == 0 {
+			m.Status("nothing waiting — press f to fetch current metadata first")
+			return nil
+		}
+		var names []string
+		for _, d := range waiting {
+			names = append(names, "  "+d.Name+"  "+d.Version+" → "+d.NewVer)
+		}
+		return m.Do("update all firmware",
+			"Write firmware to "+plural(len(waiting), "device", "devices")+":\n"+
+				strings.Join(names, "\n")+"\n\n"+
+				"Keep the machine powered until it finishes.",
+			true, system.FirmwareUpdateCmd(""))
+	case "enter":
 		row, ok := p.table.Current()
 		if !ok {
 			return nil
@@ -109,6 +125,17 @@ func (p *firmwarePage) key(m *Model, key string) tea.Cmd {
 	}
 	p.table.Key(key, 10)
 	return nil
+}
+
+// waiting is every device with an update ready for it.
+func (p *firmwarePage) waiting() []system.Device {
+	var out []system.Device
+	for _, d := range p.devices {
+		if d.NewVer != "" {
+			out = append(out, d)
+		}
+	}
+	return out
 }
 
 func (p *firmwarePage) device(id string) system.Device {
@@ -180,5 +207,5 @@ func (p *firmwarePage) Help(m *Model) []Binding {
 	if p.missing {
 		return []Binding{{"i", "install fwupd"}}
 	}
-	return []Binding{{"f", "refresh"}, {"u", "update device"}, {"/", "filter"}}
+	return []Binding{{"f", "refresh"}, {"enter", "update device"}, {"u", "update all"}, {"/", "filter"}}
 }

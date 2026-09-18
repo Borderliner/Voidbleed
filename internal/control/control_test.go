@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
+
+	"voidbleed/internal/system"
 )
 
 // onPage walks the sections until the named one is showing.
@@ -197,5 +199,25 @@ func TestFlatpakHasAnUpdatesView(t *testing.T) {
 	}
 	if strings.Contains(out, "Steam") {
 		t.Errorf("the updates view lists an application with no update:\n%s", out)
+	}
+}
+
+func TestFirmwareUpdatesEverythingWaiting(t *testing.T) {
+	restore := system.Have
+	system.Have = func(string) bool { return true } // a machine with fwupd
+	defer func() { system.Have = restore }()
+
+	m := newTestModel(t)
+	onPage(t, m, "Firmware")
+	drive(t, m, key("u"))
+	if m.over != overlayConfirm {
+		t.Fatalf("update all did not ask first, overlay = %v", m.over)
+	}
+	out := view(m)
+	// The question has to name what is about to be written where.
+	for _, want := range []string{"System Firmware", "1.31.0", "powered"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("the question does not mention %q:\n%s", want, out)
+		}
 	}
 }
