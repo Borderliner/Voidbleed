@@ -114,6 +114,7 @@ func New(opts Options) *Model {
 	m.pass.EchoMode = textinput.EchoPassword
 	m.pass.CharLimit = 128
 	m.pages = []Page{
+		newOverviewPage(),
 		newPackagesPage(),
 		newFlatpakPage(),
 		newServicesPage(),

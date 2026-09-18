@@ -37,9 +37,15 @@ func runCmd(t *testing.T, m *Model, cmd tea.Cmd, depth int) {
 		return
 	}
 	msg := cmd()
-	switch msg.(type) {
+	switch msg := msg.(type) {
 	case nil, tickMsg:
 		return // the spinner would run forever
+	case tea.BatchMsg:
+		// A page that loads in stages returns several commands at once.
+		for _, batched := range msg {
+			runCmd(t, m, batched, depth+1)
+		}
+		return
 	}
 	_, next := m.Update(msg)
 	runCmd(t, m, next, depth+1)
@@ -74,8 +80,28 @@ func newTestModel(t *testing.T) *Model {
 
 func view(m *Model) string { return m.render() }
 
+// The app opens on the overview: what this machine is, and what wants doing.
+func TestOverviewIsWhereItOpens(t *testing.T) {
+	m := newTestModel(t)
+	if got := m.pages[m.cur].Label(); got != "Overview" {
+		t.Fatalf("opened on %q", got)
+	}
+	out := view(m)
+	for _, want := range []string{"VOIDBLEED", "packages", "services"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("the overview does not show %q:\n%s", want, out)
+		}
+	}
+	// The demo machine has updates and old kernels waiting, and the overview
+	// is where that gets said.
+	if !strings.Contains(out, "needs attention") {
+		t.Errorf("nothing was flagged:\n%s", out)
+	}
+}
+
 func TestPackagesListsWhatIsInstalled(t *testing.T) {
 	m := newTestModel(t)
+	onPage(t, m, "Packages")
 	out := view(m)
 	for _, want := range []string{"Packages", "btop", "niri", "installed"} {
 		if !strings.Contains(out, want) {
@@ -105,6 +131,7 @@ func TestEverySectionRenders(t *testing.T) {
 
 func TestFilterNarrowsTheList(t *testing.T) {
 	m := newTestModel(t)
+	onPage(t, m, "Packages")
 	drive(t, m, key("/"), key("n"), key("i"))
 	out := view(m)
 	if !strings.Contains(out, "1 match") || !strings.Contains(out, "niri") {
@@ -120,6 +147,7 @@ func TestFilterNarrowsTheList(t *testing.T) {
 // first, and destructive actions must ask.
 func TestRemoveAsksFirst(t *testing.T) {
 	m := newTestModel(t)
+	onPage(t, m, "Packages")
 	drive(t, m, key("x"))
 	if m.over != overlayConfirm {
 		t.Fatalf("remove did not ask for confirmation, overlay = %v", m.over)
@@ -136,6 +164,7 @@ func TestRemoveAsksFirst(t *testing.T) {
 
 func TestUpdateRunsAndShowsOutput(t *testing.T) {
 	m := newTestModel(t)
+	onPage(t, m, "Packages")
 	drive(t, m, key("u"))     // asks first: two updates are waiting
 	drive(t, m, key("enter")) // yes
 	if m.over != overlayOutput {
