@@ -80,7 +80,7 @@ func (c *Client) Counts(ctx context.Context) Overview {
 			}
 		}
 	}
-	o.CacheBytes = dirSize("/var/cache/xbps")
+	o.CacheBytes = dirSize(CacheDir)
 	o.CacheSize = humanBytes(o.CacheBytes)
 	if services, err := c.Services(ctx); err == nil {
 		for _, s := range services {

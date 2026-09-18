@@ -149,6 +149,23 @@ func MarkAutoCmd(name string) sys.Cmd {
 	return sys.Command("xbps-pkgdb", "-m", "auto", name)
 }
 
-func UpdateCmd() sys.Cmd  { return sys.Command("xbps-install", "-Suy") }
-func SyncCmd() sys.Cmd    { return sys.Command("xbps-install", "-S") }
-func CleanUpCmd() sys.Cmd { return sys.Command("xbps-remove", "-Ooy") }
+func UpdateCmd() sys.Cmd { return sys.Command("xbps-install", "-Suy") }
+func SyncCmd() sys.Cmd   { return sys.Command("xbps-install", "-S") }
+
+// CleanUpCmds removes what nothing needs: orphaned packages, and then the
+// download cache.
+//
+// xbps only drops cached packages it considers obsolete, which on a machine
+// that is up to date is almost none of them -- the cache is mostly the
+// packages that are installed, kept in case they are wanted again. So the
+// files go directly. Nothing is lost but the download: xbps fetches them
+// again if it ever needs them.
+func CleanUpCmds() []sys.Cmd {
+	return []sys.Cmd{
+		sys.Command("xbps-remove", "-Ooy"),
+		sys.Shell("rm -f " + CacheDir + "/*.xbps " + CacheDir + "/*.sig2"),
+	}
+}
+
+// CacheDir is where xbps keeps what it has downloaded.
+const CacheDir = "/var/cache/xbps"

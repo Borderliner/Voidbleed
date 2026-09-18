@@ -66,6 +66,19 @@ func newPackagesPage() *packagesPage {
 }
 
 // Typing reports whether a filter or a field has the keyboard.
+// SetView switches to a named view, so another page can send someone to the
+// list that deals with what it flagged.
+func (p *packagesPage) SetView(name string) bool {
+	for i, view := range pkgViews {
+		if view == name {
+			p.mode = pkgMode(i)
+			p.fill()
+			return true
+		}
+	}
+	return false
+}
+
 func (p *packagesPage) Typing() bool { return p.table.Typing() }
 
 func (p *packagesPage) Label() string { return "Packages" }
@@ -223,7 +236,10 @@ func (p *packagesPage) key(m *Model, key string) tea.Cmd {
 	case "s":
 		return m.Do("sync repositories", "", true, system.SyncCmd())
 	case "c":
-		return m.Do("clean up", "Remove orphaned packages and the download cache?", true, system.CleanUpCmd())
+		return m.Do("clean up",
+			"Remove orphaned packages and empty the download cache?\n"+
+				"Cached packages are only a saved download; xbps fetches them again if it needs them.",
+			true, system.CleanUpCmds()...)
 	}
 	if p.table.Key(key, 10) {
 		return p.detailCmd(m)
