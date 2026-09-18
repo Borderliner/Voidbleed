@@ -95,6 +95,7 @@ type Model struct {
 	imageOnScreen bool
 	imageRow      int
 	imageCol      int
+	imageAt       [2]int // where the picture was last put
 
 	pages       []Page
 	cur         int
@@ -516,11 +517,13 @@ func (m *Model) drawImage() tea.Cmd {
 	if !m.imageSent {
 		out, m.imageSent = transmitLogo(), true
 	}
-	// Repainting the cells rubs the picture out, so it is placed again every
-	// few frames; the escape is small enough that this costs nothing.
-	if !m.imageOnScreen || m.frame%8 == 0 {
+	// Under the text layer the picture survives the cells being repainted, so
+	// it only has to be placed when it first appears or when it moves. Every
+	// placement walks the cursor behind the renderer's back, so the fewer the
+	// better.
+	if at := [2]int{m.imageRow, m.imageCol}; !m.imageOnScreen || at != m.imageAt {
 		out += placeLogoAt(m.imageRow, m.imageCol, logoCols, m.logoRows())
-		m.imageOnScreen = true
+		m.imageOnScreen, m.imageAt = true, at
 	}
 	if out == "" {
 		return nil

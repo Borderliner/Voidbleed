@@ -74,11 +74,17 @@ func transmitLogo() string {
 }
 
 // placeLogoAt draws the picture into a box of cells at an absolute position on
-// the screen. This is written outside the frame Bubble Tea paints, so it saves
-// the cursor, goes where the box is, and puts the cursor back.
+// the screen.
+//
+// This is written outside the frame Bubble Tea paints, which means moving the
+// terminal's cursor behind the renderer's back: it is saved, walked to the
+// box, and put back, and the cursor is hidden again afterwards in case the
+// restore brought it back. z=-1 puts the picture under the text layer, so
+// repainting the cells it sits in no longer rubs it out -- which is what let
+// this be done once per position instead of several times a second.
 func placeLogoAt(row, col, cols, rows int) string {
-	return fmt.Sprintf("\x1b7\x1b[%d;%dH\x1b_Ga=p,i=%d,p=1,c=%d,r=%d,C=1,q=2\x1b\\\x1b8",
-		row, col, logoImageID, cols, rows)
+	return fmt.Sprintf("\x1b7\x1b[%d;%dH\x1b_Ga=p,i=%d,p=1,c=%d,r=%d,z=-1,C=1,q=2\x1b\\\x1b8%s",
+		row, col, logoImageID, cols, rows, ansi.HideCursor)
 }
 
 // deleteLogo takes the picture off the screen. A placement is anchored to the

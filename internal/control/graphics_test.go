@@ -34,7 +34,7 @@ func TestPictureIsSentOnceAndPlacedCheaply(t *testing.T) {
 	if len(place) > 128 {
 		t.Errorf("placing the picture costs %d bytes", len(place))
 	}
-	for _, want := range []string{"\x1b7", "\x1b[10;20H", "a=p,i=7311", "c=26,r=13", "C=1", "\x1b8"} {
+	for _, want := range []string{"\x1b7", "\x1b[10;20H", "a=p,i=7311", "c=26,r=13", "z=-1", "C=1", "\x1b8"} {
 		if !strings.Contains(place, want) {
 			t.Errorf("placement is missing %q:\n%q", want, place)
 		}
@@ -163,5 +163,33 @@ func TestCellSizeIsRemembered(t *testing.T) {
 	drive(t, m, uv.CellSizeEvent{Width: 8, Height: 19})
 	if m.cellW != 8 || m.cellH != 19 {
 		t.Errorf("cell size read as %d×%d", m.cellW, m.cellH)
+	}
+}
+
+// Every placement walks the terminal's cursor behind the renderer's back, so
+// it happens when the picture appears or moves, and not otherwise.
+func TestPictureIsPlacedOnlyWhenItMoves(t *testing.T) {
+	m := New(Options{Demo: true})
+	m.Graphics = true
+	drive(t, m, tea.WindowSizeMsg{Width: 140, Height: 45})
+	runCmd(t, m, m.pages[m.cur].Load(m), 0)
+	_ = view(m)
+
+	writes := 0
+	for i := 0; i < 40; i++ {
+		if cmd := m.drawImage(); cmd != nil {
+			writes++
+		}
+		m.frame++
+		_ = view(m)
+	}
+	if writes != 1 {
+		t.Errorf("the picture was written %d times while nothing moved", writes)
+	}
+
+	// Moving it does write again.
+	m.imageRow++
+	if m.drawImage() == nil {
+		t.Error("the picture was not put back after it moved")
 	}
 }
