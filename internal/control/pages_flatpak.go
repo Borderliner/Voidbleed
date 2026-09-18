@@ -18,6 +18,8 @@ const (
 	fpSearch
 )
 
+var flatpakViews = []string{"installed", "updates", "search"}
+
 type flatpakPage struct {
 	mode    flatpakMode
 	table   Table
@@ -47,6 +49,18 @@ func newFlatpakPage() *flatpakPage {
 }
 
 // Typing reports whether a filter or a field has the keyboard.
+// SetView switches to a named view.
+func (p *flatpakPage) SetView(name string) bool {
+	for i, view := range flatpakViews {
+		if view == name {
+			p.mode = flatpakMode(i)
+			p.fill()
+			return true
+		}
+	}
+	return false
+}
+
 func (p *flatpakPage) Typing() bool { return p.table.Typing() }
 
 func (p *flatpakPage) Label() string { return "Flatpak" }
@@ -263,7 +277,7 @@ func (p *flatpakPage) View(m *Model, width, height int) string {
 		return m.Styles.Muted.Render("Flatpak is not installed on this machine.") + "\n\n" +
 			m.Styles.Dim.Render("press i to install it, then reload with r")
 	}
-	head := m.tabs([]string{"installed", "updates", "search"}, int(p.mode))
+	head := m.tabs(flatpakViews, int(p.mode))
 	switch {
 	case p.mode == fpSearch && p.table.Filtering() == "":
 		head += "\n\n" + m.Styles.Dim.Render("press / and type, then enter to search Flathub")

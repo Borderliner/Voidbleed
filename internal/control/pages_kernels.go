@@ -42,6 +42,19 @@ func newKernelsPage() *kernelsPage {
 }
 
 // Typing reports whether a filter or a field has the keyboard.
+// SetView switches to a named view, so another page can send someone to the
+// list that deals with what it flagged.
+func (p *kernelsPage) SetView(name string) bool {
+	for i, view := range kernelViews {
+		if view == name {
+			p.view = kernelView(i)
+			p.fill()
+			return true
+		}
+	}
+	return false
+}
+
 func (p *kernelsPage) Typing() bool { return p.table.Typing() }
 
 func (p *kernelsPage) Label() string { return "Kernels" }

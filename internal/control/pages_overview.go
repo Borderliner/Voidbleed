@@ -13,6 +13,7 @@ import (
 
 type overviewPage struct {
 	info    system.Overview
+	cursor  int // which thing in the attention list is picked
 	loading bool
 	loaded  bool
 }
@@ -51,6 +52,8 @@ func (p *overviewPage) Update(m *Model, msg tea.Msg) tea.Cmd {
 		facts.CacheBytes, facts.Stale, facts.Counted = p.info.CacheBytes, p.info.Stale, p.info.Counted
 		p.info, p.loaded = facts, true
 		m.Status(facts.Hostname + " · " + facts.Kernel + " · up " + facts.Uptime)
+	case tea.KeyPressMsg:
+		return p.key(m, msg.String())
 	case overviewCountsMsg:
 		counts := msg.counts
 		counts.Hostname, counts.Kernel, counts.Uptime = p.info.Hostname, p.info.Kernel, p.info.Uptime
@@ -60,28 +63,61 @@ func (p *overviewPage) Update(m *Model, msg tea.Msg) tea.Cmd {
 	return nil
 }
 
-// attention is the short list of things worth doing something about, each
-// with the section that does it.
-func (p *overviewPage) attention(m *Model) []string {
+// attend is one thing worth doing something about, and the thing that does
+// it: usually opening the section that deals with it, sometimes the action
+// itself.
+type attend struct {
+	text    string
+	section string
+	view    string
+	do      func(m *Model) tea.Cmd
+}
+
+// attention is what the machine is asking for, in the order it is worth
+// dealing with.
+func (p *overviewPage) attention(m *Model) []attend {
 	o := p.info
-	var items []string
+	var items []attend
 	if o.Updates > 0 {
-		items = append(items, plural(o.Updates, "package update", "package updates")+" — press 2")
+		items = append(items, attend{
+			text:    plural(o.Updates, "package update", "package updates") + " waiting",
+			section: "Packages", view: "updates",
+		})
 	}
 	if o.FlatpakUpdates > 0 {
-		items = append(items, plural(o.FlatpakUpdates, "Flatpak update", "Flatpak updates")+" — press 3")
+		items = append(items, attend{
+			text:    plural(o.FlatpakUpdates, "Flatpak update", "Flatpak updates") + " waiting",
+			section: "Flatpak", view: "updates",
+		})
 	}
 	if len(o.Stale) > 0 {
-		items = append(items, plural(len(o.Stale), "old kernel", "old kernels")+" in /boot — press "+
-			itoa(m.sectionNumber("Kernels")))
+		items = append(items, attend{
+			text:    plural(len(o.Stale), "old kernel", "old kernels") + " still in /boot",
+			section: "Kernels", view: "in /boot",
+		})
 	}
 	if o.Orphans > 0 {
-		items = append(items, plural(o.Orphans, "orphan", "orphans")+" — press 2, then →")
+		items = append(items, attend{
+			text:    plural(o.Orphans, "orphan", "orphans") + " nothing needs",
+			section: "Packages", view: "orphans",
+		})
 	}
 	// A gigabyte of downloaded packages nobody will install again is worth a
 	// mention; a few megabytes is not.
 	if o.CacheBytes > 1<<30 {
-		items = append(items, o.CacheSize+" of cache — press 2")
+		size, orphans := o.CacheSize, o.Orphans
+		items = append(items, attend{
+			text: size + " of downloaded packages",
+			do: func(m *Model) tea.Cmd {
+				question := "Empty the download cache (" + size + ")?"
+				if orphans > 0 {
+					question = "Remove " + plural(orphans, "orphaned package", "orphaned packages") +
+						" and empty the download cache (" + size + ")?"
+				}
+				return m.Do("clean up", question+"\nCached packages are only a saved download; "+
+					"xbps fetches them again if it needs them.", true, system.CleanUpCmds()...)
+			},
+		})
 	}
 	return items
 }
@@ -115,6 +151,26 @@ func (p *overviewPage) View(m *Model, width, height int) string {
 		head = center(width, s.Brand.Render(wordmark)) + "\n\n"
 	}
 	return lipgloss.NewStyle().Width(width).Height(height).Render(head + body)
+}
+
+func (p *overviewPage) key(m *Model, key string) tea.Cmd {
+	items := p.attention(m)
+	if len(items) == 0 {
+		return nil
+	}
+	switch key {
+	case "up", "k":
+		p.cursor = (p.cursor + len(items) - 1) % len(items)
+	case "down", "j":
+		p.cursor = (p.cursor + 1) % len(items)
+	case "enter":
+		item := items[min(p.cursor, len(items)-1)]
+		if item.do != nil {
+			return item.do(m)
+		}
+		return m.goToView(item.section, item.view)
+	}
+	return nil
 }
 
 // body is the machine on the left and its software on the right, or one under
@@ -163,12 +219,22 @@ func (p *overviewPage) bodyWith(m *Model, width, limit int) string {
 	}
 	if items := p.attention(m); len(items) > 0 {
 		software.WriteString("\n" + s.Section.Render("needs attention") + "\n")
+		picked := min(p.cursor, len(items)-1)
 		for i, item := range items {
-			if i == 4 && len(items) > 5 {
+			if i == limit && len(items) > limit {
 				software.WriteString(s.Dim.Render("  and "+itoa(len(items)-i)+" more") + "\n")
 				break
 			}
-			software.WriteString(s.Warn.Render(m.Glyphs.Bullet+" ") + s.Text.Render(item) + "\n")
+			line := s.Text.Render(item.text)
+			if i == picked {
+				// The picked one says what enter will do with it.
+				what := "enter to go there"
+				if item.do != nil {
+					what = "enter to do it"
+				}
+				line = s.Accent.Render(item.text) + s.Dim.Render("  "+what)
+			}
+			software.WriteString(s.Warn.Render(m.Glyphs.Bullet+" ") + line + "\n")
 		}
 	} else if o.Counted {
 		software.WriteString("\n" + s.OK.Render(m.Glyphs.Done+" nothing needs attention") + "\n")
@@ -187,7 +253,12 @@ func center(width int, text string) string {
 	return lipgloss.PlaceHorizontal(width, lipgloss.Center, text)
 }
 
-func (p *overviewPage) Help(m *Model) []Binding { return nil }
+func (p *overviewPage) Help(m *Model) []Binding {
+	if len(p.attention(m)) == 0 {
+		return nil
+	}
+	return []Binding{{m.Glyphs.UpDown, "pick"}, {"enter", "deal with it"}}
+}
 
 // sectionNumber is what to press to reach a section, since the snapshots page
 // is only there on a machine that can take snapshots.

@@ -160,6 +160,44 @@ func TestKeepingAnOrphanClearsTheFlag(t *testing.T) {
 	}
 }
 
+// The overview should not tell people which keys to press; it should take
+// them there.
+func TestAttentionTakesYouThere(t *testing.T) {
+	m := newTestModel(t)
+	out := view(m)
+	if !strings.Contains(out, "enter to go there") {
+		t.Fatalf("the picked item does not say what enter does:\n%s", out)
+	}
+	drive(t, m, key("enter")) // the first item is the waiting updates
+	if got := m.pages[m.cur].Label(); got != "Packages" {
+		t.Fatalf("enter went to %q", got)
+	}
+	page := m.pages[m.cur].(*packagesPage)
+	if page.mode != modeUpdates {
+		t.Errorf("landed on the %q view, not the updates", page.mode)
+	}
+}
+
+// Cleaning has to free what the overview is complaining about. xbps only
+// drops cached packages it calls obsolete, which on an up-to-date machine is
+// almost none of them.
+func TestCleaningEmptiesTheCache(t *testing.T) {
+	m := newTestModel(t)
+	onPage(t, m, "Packages")
+	drive(t, m, key("c"))
+	if m.over != overlayConfirm {
+		t.Fatalf("cleaning did not ask first, overlay = %v", m.over)
+	}
+	drive(t, m, key("enter"))
+	runner := m.Client.Run.(*demoRunner)
+	if !runner.ran("xbps-remove -Ooy") {
+		t.Errorf("orphans were not removed; ran:\n%v", runner.seen)
+	}
+	if !runner.ran("rm -f /var/cache/xbps/*.xbps") {
+		t.Errorf("the cache was not emptied; ran:\n%v", runner.seen)
+	}
+}
+
 // A machine that cannot take snapshots is not shown a snapshots page.
 func TestSnapshotsOnlyWhereTheyWork(t *testing.T) {
 	m := New(Options{}) // this machine, not the demo one
