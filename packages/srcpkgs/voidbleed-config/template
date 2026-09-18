@@ -3,7 +3,7 @@
 # by scripts/build-packages.sh.
 pkgname=voidbleed-config
 version=20260916
-revision=3
+revision=4
 depends="base-files shadow sudo fish-shell"
 short_desc="Voidbleed system configuration and branding"
 maintainer="@MAINTAINER@"

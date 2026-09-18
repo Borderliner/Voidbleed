@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=Voidbleed
+Description=Bleed into the void
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/voidbleed
+ScriptFile=/usr/share/plymouth/themes/voidbleed/voidbleed.script

@@ -59,7 +59,8 @@ fi
 echo "install config packages into a scratch root"
 # The icon theme is large; install it too so its files are checked.
 if xi -y bash coreutils grep sed findutils shadow \
-        voidbleed-config voidbleed-desktop-config reversal-red-icon-theme xcursor-vanilla-dmz-aa >"$tmp/install.txt" 2>&1; then
+        voidbleed-config voidbleed-desktop-config reversal-red-icon-theme xcursor-vanilla-dmz-aa \
+        plymouth >"$tmp/install.txt" 2>&1; then
     pass "transaction completed"
 else
     fail "transaction completed"; tail -20 "$tmp/install.txt"
@@ -103,6 +104,16 @@ check "session wrapper is executable"          test -x "$t/usr/bin/voidbleed-ses
 check "Voidbleed session entry installed"      grep -q '^Exec=/usr/bin/voidbleed-session' "$t/usr/share/wayland-sessions/voidbleed.desktop"
 check "greeter wrapper releases the splash"    grep -q 'plymouth quit --retain-splash' "$t/usr/bin/voidbleed-greeter-session"
 check "greeter wrapper is executable"          test -x "$t/usr/bin/voidbleed-greeter-session"
+check "splash theme installed"                 test -s "$t/usr/share/plymouth/themes/voidbleed/voidbleed.script"
+check "splash theme uses the script plugin"    grep -q '^ModuleName=script$' "$t/usr/share/plymouth/themes/voidbleed/voidbleed.plymouth"
+check "splash theme selected"                  grep -q '^Theme=voidbleed$' "$t/etc/plymouth/plymouthd.conf"
+check "plymouth lands in the initramfs"        grep -q 'add_dracutmodules+=" plymouth "' "$t/usr/lib/dracut/dracut.conf.d/05-voidbleed-splash.conf"
+# The initramfs carries no fonts, so the splash draws pictures only: a missing
+# one is a blank spot on a screen nobody can debug from.
+while read -r image; do
+    check "splash image $image installed"      test -s "$t/usr/share/plymouth/themes/voidbleed/$image"
+done < <(grep -o 'Image("[^"]*")' "$root/overlays/system/usr/share/plymouth/themes/voidbleed/voidbleed.script" |
+    sed 's/Image("//; s/")//' | sort -u)
 check "greeter sync polkit rule"               grep -q 'org.noctalia.greeter.apply-appearance' "$t/usr/share/polkit-1/rules.d/49-noctalia-greeter-sync.rules"
 check "Reversal icon theme installed"          test -f "$t/usr/share/icons/Reversal-red-dark/index.theme"
 check "white DMZ cursor installed"             test -d "$t/usr/share/icons/Vanilla-DMZ-AA/cursors"

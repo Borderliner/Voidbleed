@@ -1,0 +1,152 @@
+# Voidbleed boot splash: the logo over a red sweep, and a passphrase prompt
+# for encrypted roots.
+#
+# plymouth-populate-initrd copies this directory and the script plugin into
+# the initramfs, but no fonts, no fontconfig and no label plugin -- so every
+# string here is a pre-rendered image built by scripts/gen-splash-assets.py.
+
+screen.width = Window.GetWidth();
+screen.height = Window.GetHeight();
+screen.x = Window.GetX();
+screen.y = Window.GetY();
+
+# Everything is sized off the screen height, so a laptop panel and a 4K
+# monitor get the same splash at different scales.
+unit = screen.height / 1080;
+if (unit < 0.7) {
+    unit = 0.7;
+}
+
+# The void, bleeding towards the bottom of the screen.
+Window.SetBackgroundTopColor(0.043, 0.035, 0.039);
+Window.SetBackgroundBottomColor(0.082, 0.020, 0.027);
+
+# ── logo ────────────────────────────────────────────────────────────────────
+logo.size = Math.Int(220 * unit);
+logo.file = Image("logo.png");
+logo.image = logo.file.Scale(logo.size, logo.size);
+logo.sprite = Sprite(logo.image);
+logo.sprite.SetX(screen.x + (screen.width - logo.size) / 2);
+logo.sprite.SetY(screen.y + screen.height * 0.32);
+logo.sprite.SetZ(10);
+
+# ── progress sweep ──────────────────────────────────────────────────────────
+track.width = Math.Int(screen.width * 0.18);
+if (track.width < 240 * unit) {
+    track.width = Math.Int(240 * unit);
+}
+track.height = Math.Int(2 * unit);
+if (track.height < 2) {
+    track.height = 2;
+}
+track.x = screen.x + (screen.width - track.width) / 2;
+track.y = screen.y + screen.height * 0.63;
+
+track.file = Image("track.png");
+track.sprite = Sprite(track.file.Scale(track.width, track.height));
+track.sprite.SetX(track.x);
+track.sprite.SetY(track.y);
+track.sprite.SetZ(5);
+
+sweep.width = Math.Int(track.width * 0.42);
+sweep.file = Image("sweep.png");
+sweep.sprite = Sprite(sweep.file.Scale(sweep.width, track.height));
+sweep.sprite.SetY(track.y);
+sweep.sprite.SetZ(6);
+
+# ── slogan ──────────────────────────────────────────────────────────────────
+slogan.image = Image("slogan.png");
+slogan.height = Math.Int(screen.height * 0.015);
+slogan.width = Math.Int(slogan.image.GetWidth() * slogan.height / slogan.image.GetHeight());
+slogan.scaled = slogan.image.Scale(slogan.width, slogan.height);
+slogan.sprite = Sprite(slogan.scaled);
+slogan.sprite.SetX(screen.x + (screen.width - slogan.width) / 2);
+slogan.sprite.SetY(screen.y + screen.height * 0.88);
+slogan.sprite.SetZ(5);
+slogan.sprite.SetOpacity(0.75);
+
+# ── passphrase prompt ───────────────────────────────────────────────────────
+prompt.image = Image("prompt.png");
+prompt.height = Math.Int(screen.height * 0.026);
+prompt.width = Math.Int(prompt.image.GetWidth() * prompt.height / prompt.image.GetHeight());
+prompt.scaled = prompt.image.Scale(prompt.width, prompt.height);
+prompt.sprite = Sprite(prompt.scaled);
+prompt.sprite.SetX(screen.x + (screen.width - prompt.width) / 2);
+prompt.sprite.SetY(screen.y + screen.height * 0.60);
+prompt.sprite.SetZ(20);
+prompt.sprite.SetOpacity(0);
+
+bullet.size = Math.Int(10 * unit);
+bullet.gap = Math.Int(9 * unit);
+bullet.file = Image("bullet.png");
+bullet.image = bullet.file.Scale(bullet.size, bullet.size);
+bullet.made = 0;
+bullet.max = 24;
+
+# Sprites are never destroyed, only hidden: a passphrase is typed one
+# character at a time, and rebuilding the row on each keystroke would churn.
+fun ensure_bullets (count) {
+    while (bullet.made < count) {
+        sprite = Sprite(bullet.image);
+        sprite.SetZ(21);
+        sprite.SetOpacity(0);
+        bullet_sprites[bullet.made] = sprite;
+        bullet.made = bullet.made + 1;
+    }
+}
+
+fun hide_bullets () {
+    for (i = 0; i < bullet.made; i++) {
+        bullet_sprites[i].SetOpacity(0);
+    }
+}
+
+fun display_password (text, count) {
+    track.sprite.SetOpacity(0);
+    sweep.sprite.SetOpacity(0);
+    prompt.sprite.SetOpacity(1);
+
+    shown = count;
+    if (shown > bullet.max) {
+        shown = bullet.max;
+    }
+    ensure_bullets(shown);
+
+    step = bullet.size + bullet.gap;
+    row = shown * step - bullet.gap;
+    left = screen.x + (screen.width - row) / 2;
+    for (i = 0; i < bullet.made; i++) {
+        if (i < shown) {
+            bullet_sprites[i].SetX(left + i * step);
+            bullet_sprites[i].SetY(screen.y + screen.height * 0.66);
+            bullet_sprites[i].SetOpacity(1);
+        } else {
+            bullet_sprites[i].SetOpacity(0);
+        }
+    }
+}
+
+fun display_normal () {
+    prompt.sprite.SetOpacity(0);
+    hide_bullets();
+    track.sprite.SetOpacity(1);
+    sweep.sprite.SetOpacity(1);
+}
+
+# ── animation ───────────────────────────────────────────────────────────────
+# Boot progress is a guess on the first boot of a machine, so the sweep just
+# shows that something is happening rather than pretending to measure it.
+anim.phase = 0;
+
+fun refresh () {
+    anim.phase = anim.phase + 0.05;
+    slide = 0.5 - 0.5 * Math.Cos(anim.phase);
+    sweep.sprite.SetX(track.x + (track.width - sweep.width) * slide);
+
+    breath = 0.5 - 0.5 * Math.Cos(anim.phase * 0.5);
+    logo.sprite.SetOpacity(0.84 + 0.16 * breath);
+}
+
+Plymouth.SetRefreshFunction(refresh);
+Plymouth.SetDisplayPasswordFunction(display_password);
+Plymouth.SetDisplayNormalFunction(display_normal);

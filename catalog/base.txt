@@ -15,6 +15,9 @@ cryptsetup
 sudo
 vpm
 
+# boot splash; the theme and its dracut drop-in live in overlays/system
+plymouth
+
 # services
 NetworkManager
 chrony
