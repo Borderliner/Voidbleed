@@ -295,6 +295,30 @@ func TestAppearanceReadsAndEdits(t *testing.T) {
 	}
 }
 
+// A list of names like "dbus" and "socklog-unix" tells you nothing unless you
+// already know. Every service belongs to a package, and packages describe
+// themselves.
+func TestServicesSayWhatTheyAre(t *testing.T) {
+	m := newTestModel(t)
+	onPage(t, m, "Services")
+	out := view(m)
+	if !strings.Contains(out, "what it is") {
+		t.Errorf("no description column:\n%s", out)
+	}
+	if !strings.Contains(out, "Network Managemen") {
+		t.Errorf("the description of NetworkManager is missing:\n%s", out)
+	}
+	page := m.pages[m.cur].(*servicesPage)
+	for _, s := range page.services {
+		if s.Name == "NetworkManager" {
+			if s.About == "" || s.Package != "NetworkManager" {
+				t.Errorf("NetworkManager read as %+v", s)
+			}
+			return
+		}
+	}
+}
+
 func TestServicesReadsTheRealLayout(t *testing.T) {
 	m := newTestModel(t)
 	for m.pages[m.cur].Label() != "Services" {

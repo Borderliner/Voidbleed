@@ -25,9 +25,12 @@ type servicesLoadedMsg struct {
 }
 
 func newServicesPage() *servicesPage {
+	// The name alone says nothing: "socklog-unix" and "dbus" mean something
+	// only if you already know. What each one is goes next to it, and the
+	// state becomes the badge on the right.
 	return &servicesPage{table: Table{
-		Headers: []string{"service", "state", ""},
-		Widths:  []int{0, 12, 10},
+		Headers: []string{"service", "what it is", ""},
+		Widths:  []int{22, 0, 9},
 	}}
 }
 
@@ -132,22 +135,18 @@ func (p *servicesPage) fill() {
 			continue
 		}
 		state := "disabled"
-		badge := ""
 		switch {
 		case s.Enabled && s.Running():
-			state, badge = "running", s.Since
+			state = "running"
 		case s.Enabled && s.State == "down":
-			state, badge = "stopped", s.Since
+			state = "stopped"
 		case s.Enabled:
 			state = "enabled"
 		}
-		if s.Down && !s.Enabled {
-			badge = "starts down"
-		}
 		rows = append(rows, Row{
 			ID:    s.Name,
-			Cols:  []string{s.Name, state, ""},
-			Badge: badge,
+			Cols:  []string{s.Name, s.About, ""},
+			Badge: state,
 			Mark:  s.Enabled,
 			Muted: !s.Enabled,
 		})
@@ -171,7 +170,11 @@ func (p *servicesPage) View(m *Model, width, height int) string {
 			if s.Name != row.ID {
 				continue
 			}
-			detail = s.Name + "\n\n"
+			detail = s.Name + "\n"
+			if s.About != "" {
+				detail += s.About + "\n"
+			}
+			detail += "\n"
 			if s.Enabled {
 				detail += "enabled: starts at boot\n"
 			} else {
@@ -185,6 +188,9 @@ func (p *servicesPage) View(m *Model, width, height int) string {
 				if s.Since != "" {
 					detail += "for: " + s.Since + "\n"
 				}
+			}
+			if s.Package != "" {
+				detail += "from: " + s.Package + "\n"
 			}
 			detail += "\ndefinition: " + system.ServiceDir + "/" + s.Name
 			break

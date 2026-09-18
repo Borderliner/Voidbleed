@@ -53,6 +53,9 @@ ii linux6.18-6.18.52_1                    Linux kernel
 ii linux6.18-headers-6.18.52_1            Linux kernel headers
 ii linux6.12-6.12.109_1                   Linux kernel
 ii dejavu-fonts-ttf-2.37_3                Font family
+ii dbus-1.16.2_1                          Message bus system
+ii NetworkManager-1.56.0_1                Network Management daemon
+ii cups-2.4.15_1                          Common Unix Printing System
 `, nil
 	case strings.Contains(line, "xbps-query -m"):
 		return "btop-1.4.7_1\nghostty-1.2.3_1\nniri-26.04_1\nnoctalia-5.2.0_1\n", nil
@@ -91,6 +94,11 @@ noctalia-5.3.0_1 update x86_64 https://repo.voiders.dev 4194304 1048576
 		return `[{"name":"flathub","url":"https://dl.flathub.org/repo/"}]`, nil
 	case strings.Contains(line, "flatpak search"):
 		return "org.kde.krita\tKrita\t5.2.9\tflathub\nmd.obsidian.Obsidian\tObsidian\t1.9.1\tflathub\n", nil
+	case strings.Contains(line, "xbps-query -o"):
+		return `dbus-1.16.2_1: /etc/sv/dbus/run (regular file)
+NetworkManager-1.56.0_1: /etc/sv/NetworkManager/run (regular file)
+cups-2.4.15_1: /etc/sv/cupsd/run (regular file)
+`, nil
 	case strings.Contains(line, "sv status"):
 		return `run: /var/service/dbus: (pid 1204) 84231s
 run: /var/service/NetworkManager: (pid 1337) 84230s

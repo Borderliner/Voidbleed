@@ -26,7 +26,9 @@ type Service struct {
 	State   string // "run", "down", "" when unknown (reading it needs root)
 	Since   string // how long it has been in that state
 	PID     string
-	Down    bool // /etc/sv/<name>/down: supervised, but not started
+	Down    bool   // /etc/sv/<name>/down: supervised, but not started
+	Package string // what installed it
+	About   string // that package's description of itself
 }
 
 func (s Service) Running() bool { return s.State == "run" }
@@ -59,7 +61,51 @@ func (c *Client) Services(ctx context.Context) ([]Service, error) {
 		})
 	}
 	sort.Slice(services, func(i, j int) bool { return services[i].Name < services[j].Name })
-	return services, nil
+	return c.describe(ctx, services), nil
+}
+
+// describe says what each service is, which a list of names like "dbus" and
+// "socklog-unix" otherwise leaves to guesswork. Every service definition
+// belongs to a package, and every package describes itself; asking xbps who
+// owns the run scripts answers for all of them in one go.
+func (c *Client) describe(ctx context.Context, services []Service) []Service {
+	owners := map[string]string{}
+	out, err := c.output(ctx, "xbps-query", "-o", ServiceDir+"/*/run")
+	if err != nil && strings.TrimSpace(out) == "" {
+		return services
+	}
+	for _, line := range lines(out) {
+		// "dbus-1.16.2_1: /etc/sv/dbus/run (regular file)"
+		pkgver, path, ok := strings.Cut(line, ": ")
+		if !ok {
+			continue
+		}
+		path = strings.TrimSuffix(strings.Fields(path)[0], "/run")
+		name := strings.TrimPrefix(path, ServiceDir+"/")
+		// A log service lives under the service it logs for.
+		if strings.Contains(name, "/") {
+			continue
+		}
+		pkg, _ := splitPkgver(pkgver)
+		owners[name] = pkg
+	}
+
+	about := map[string]string{}
+	if list, err := c.output(ctx, "xbps-query", "-l"); err == nil {
+		for _, line := range lines(list) {
+			fields := strings.Fields(line)
+			if len(fields) < 3 {
+				continue
+			}
+			name, _ := splitPkgver(fields[1])
+			about[name] = strings.TrimSpace(strings.TrimPrefix(line, fields[0]+" "+fields[1]))
+		}
+	}
+	for i, s := range services {
+		services[i].Package = owners[s.Name]
+		services[i].About = about[owners[s.Name]]
+	}
+	return services
 }
 
 // Status asks runit how each enabled service is doing. It needs root, so the
