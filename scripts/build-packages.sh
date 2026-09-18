@@ -62,8 +62,10 @@ stage() {
     rm -rf "$dest"
     cp -a "$root/packages/srcpkgs/$name" "$dest"
     mkdir -p "$dest/files"
-    # Voidbleed's own packages are MIT; ship the text with them.
+    # Voidbleed's own packages are MIT; ship the text with them. The control
+    # centre builds from its own repository, which carries its own copy.
     case "$name" in
+        voidbleed-control) ;;
         voidbleed-*) cp -a "$root/LICENSE" "$dest/files/LICENSE" ;;
     esac
     case "$name" in
@@ -85,17 +87,14 @@ stage() {
                 -o "$dest/files/voidbleed-installer" ./cmd/voidbleed-installer)
             cp -a "$root/catalog" "$dest/files/catalog"
             ;;
-        voidbleed-control)
-            log "building the control centre binary"
-            (cd "$root" && CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" \
-                -o "$dest/files/voidbleed-control" ./cmd/voidbleed-control)
-            ;;
     esac
+    # A template with no placeholders is fine: grep finding nothing must not
+    # take the script down with pipefail.
     grep -rlZ -e '@REPO_URL@' -e '@HOMEPAGE@' -e '@MAINTAINER@' "$dest" 2>/dev/null \
         | xargs -0 -r sed -i \
             -e "s|@REPO_URL@|$VOIDBLEED_REPO_URL|g" \
             -e "s|@HOMEPAGE@|$VOIDBLEED_HOMEPAGE|g" \
-            -e "s|@MAINTAINER@|$VOIDBLEED_MAINTAINER|g"
+            -e "s|@MAINTAINER@|$VOIDBLEED_MAINTAINER|g" || true
 }
 
 # ── build ───────────────────────────────────────────────────────────────────
