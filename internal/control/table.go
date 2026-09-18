@@ -186,7 +186,10 @@ func (t *Table) View(s theme.Styles, g theme.GlyphSet, width, height int) string
 		}
 		line := strings.Join(cells, " ")
 		if row.Badge != "" {
-			line = fitBadge(line, row.Badge, width)
+			// The columns are padded to their full width, so the badge only
+			// fits once that padding is off the end of the line; the empty
+			// trailing column is what reserves room for it.
+			line = fitBadge(strings.TrimRight(line, " "), row.Badge, width)
 		}
 		switch {
 		case i == t.cursor:
