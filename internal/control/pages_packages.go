@@ -3,6 +3,7 @@ package control
 import (
 	"context"
 	"strings"
+	"time"
 
 	tea "charm.land/bubbletea/v2"
 
@@ -30,6 +31,7 @@ type packagesPage struct {
 	marked    map[string]bool
 	detail    string
 	detailFor string
+	details   map[string]string // what xbps said about a package, kept
 	loading   bool
 }
 
@@ -46,9 +48,14 @@ type pkgDetailMsg struct {
 	name, text string
 }
 
+// pkgDetailDueMsg fires when the cursor has sat on a row long enough to be
+// worth asking xbps about it.
+type pkgDetailDueMsg struct{ name string }
+
 func newPackagesPage() *packagesPage {
 	return &packagesPage{
-		marked: map[string]bool{},
+		marked:  map[string]bool{},
+		details: map[string]string{},
 		table: Table{
 			Headers: []string{"package", "version", ""},
 			Widths:  []int{0, 16, 10},
@@ -108,7 +115,24 @@ func (p *packagesPage) Update(m *Model, msg tea.Msg) tea.Cmd {
 		p.found = msg.packages
 		p.fill()
 		return p.detailCmd(m)
+	case pkgDetailDueMsg:
+		if msg.name != p.detailFor {
+			return nil // the cursor moved on while the timer ran
+		}
+		if text, known := p.details[msg.name]; known {
+			p.detail = text
+			return nil
+		}
+		client, name := m.Client, msg.name
+		return func() tea.Msg {
+			out, err := client.Show(context.Background(), name)
+			if err != nil {
+				return pkgDetailMsg{name: name, text: "no description available"}
+			}
+			return pkgDetailMsg{name: name, text: describe(out)}
+		}
 	case pkgDetailMsg:
+		p.details[msg.name] = msg.text
 		if msg.name == p.detailFor {
 			p.detail = msg.text
 		}
@@ -254,8 +278,12 @@ func (p *packagesPage) search(m *Model) tea.Cmd {
 	}
 }
 
-// detailCmd fetches what xbps knows about the highlighted package, which is
+// detailCmd shows what xbps knows about the highlighted package, which is
 // better than anything this program could summarise itself.
+//
+// Asking for every row the cursor passes over means a process per keypress,
+// and holding an arrow key then feels like wading through mud -- so answers
+// are kept, and a new question waits until the cursor settles.
 func (p *packagesPage) detailCmd(m *Model) tea.Cmd {
 	row, ok := p.table.Current()
 	if !ok {
@@ -265,15 +293,18 @@ func (p *packagesPage) detailCmd(m *Model) tea.Cmd {
 	if row.ID == p.detailFor {
 		return nil
 	}
-	p.detailFor, p.detail = row.ID, "…"
-	client, name := m.Client, row.ID
-	return func() tea.Msg {
-		out, err := client.Show(context.Background(), name)
-		if err != nil {
-			return pkgDetailMsg{name: name, text: "no description available"}
-		}
-		return pkgDetailMsg{name: name, text: describe(out)}
+	p.detailFor = row.ID
+	if text, known := p.details[row.ID]; known {
+		p.detail = text
+		return nil
 	}
+	// Keep the pane the same width while the answer is on its way, so the
+	// layout does not jump under the cursor.
+	p.detail = row.ID + "\n\nreading…"
+	name := row.ID
+	return tea.Tick(180*time.Millisecond, func(time.Time) tea.Msg {
+		return pkgDetailDueMsg{name: name}
+	})
 }
 
 // describe keeps the lines of xbps-query -R worth reading on a narrow pane.

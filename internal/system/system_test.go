@@ -109,3 +109,46 @@ To                         Action      From
 		t.Errorf("rules read as %+v", fw.Rules)
 	}
 }
+
+func TestInstalledPackages(t *testing.T) {
+	runner := &fakeRunner{out: map[string]string{
+		"xbps-query -l": "ii btop-1.4.7_1   Monitor of resources\nii niri-26.04_1   Compositor\n",
+		"xbps-query -m": "btop-1.4.7_1\n",
+		"xbps-query -O": "niri-26.04_1\n",
+	}}
+	pkgs, err := NewWith(runner, 1000).Installed(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(pkgs) != 2 {
+		t.Fatalf("got %d packages", len(pkgs))
+	}
+	btop := pkgs[0]
+	if btop.Name != "btop" || btop.Version != "1.4.7_1" || !btop.Manual || btop.Orphan {
+		t.Errorf("btop read as %+v", btop)
+	}
+	if !pkgs[1].Orphan {
+		t.Errorf("niri should be marked an orphan: %+v", pkgs[1])
+	}
+}
+func TestUpdateCheckDoesNotNeedRoot(t *testing.T) {
+	runner := &fakeRunner{out: map[string]string{
+		"xbps-install": "niri-26.05_1 update x86_64 https://repo 9437184 3145728\n",
+	}}
+	c := NewWith(runner, 1000)
+	updates, err := c.Updates(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(updates) != 1 || updates[0].Name != "niri" || updates[0].NewVersion != "26.05_1" {
+		t.Errorf("updates read as %+v", updates)
+	}
+	for _, line := range runner.seen {
+		if strings.Contains(line, "xbps-install") && !strings.Contains(line, "-M") {
+			t.Errorf("update check would write to /var/db/xbps: %s", line)
+		}
+		if strings.Contains(line, "sudo") {
+			t.Errorf("update check asked for root: %s", line)
+		}
+	}
+}
