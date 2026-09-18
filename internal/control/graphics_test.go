@@ -1,6 +1,7 @@
 package control
 
 import (
+	"encoding/base64"
 	"strings"
 	"testing"
 
@@ -10,8 +11,9 @@ import (
 	"github.com/charmbracelet/x/ansi/kitty"
 )
 
-// The box the picture goes into is plain cells, so the layout around it is
-// the same whether the picture appears or not.
+// The picture is drawn by putting particular characters in the frame, so the
+// block of them has to measure exactly as many cells as it occupies -- every
+// layout on the page is placed around it.
 func TestLogoBoxMeasuresAsPlainCells(t *testing.T) {
 	for _, size := range [][2]int{{26, 13}, {20, 10}, {40, 20}} {
 		box := logoBox(size[0], size[1])
@@ -24,41 +26,104 @@ func TestLogoBoxMeasuresAsPlainCells(t *testing.T) {
 	}
 }
 
-// The picture is sent once and placed cheaply, because placing happens again
-// and again while the overview is on screen.
-func TestPictureIsSentOnceAndPlacedCheaply(t *testing.T) {
-	if len(transmitLogo()) < len(logoPNG) {
-		t.Error("the transmission does not carry the picture")
-	}
-	place := placeLogoAt(10, 20, 26, 13)
-	if len(place) > 128 {
-		t.Errorf("placing the picture costs %d bytes", len(place))
-	}
-	for _, want := range []string{"\x1b7", "\x1b[10;20H", "a=p,i=7311", "c=26,r=13", "z=-1", "C=1", "\x1b8"} {
-		if !strings.Contains(place, want) {
-			t.Errorf("placement is missing %q:\n%q", want, place)
+// Every cell names its own row and column in the picture, and carries the
+// image id in its colour. Get any of that wrong and the terminal draws
+// nothing, or draws the wrong part of the picture.
+func TestLogoCellsNameTheirPlace(t *testing.T) {
+	box := logoBox(3, 2)
+	for r, line := range strings.Split(box, "\n") {
+		runes := []rune(stripSGR(line))
+		if len(runes) != 9 { // three cells of placeholder + two marks
+			t.Fatalf("row %d has %d runes, want 9: %q", r, len(runes), string(runes))
+		}
+		for c := 0; c < 3; c++ {
+			cell := runes[c*3 : c*3+3]
+			if cell[0] != kitty.Placeholder {
+				t.Errorf("row %d cell %d does not start with the placeholder", r, c)
+			}
+			if cell[1] != kitty.Diacritic(r) {
+				t.Errorf("row %d cell %d names row %q", r, c, cell[1])
+			}
+			if cell[2] != kitty.Diacritic(c) {
+				t.Errorf("row %d cell %d names column %q", r, c, cell[2])
+			}
 		}
 	}
-}
-
-// The box is found by the marker it leaves, not by re-deriving the layout.
-func TestMarkerLocatesTheBox(t *testing.T) {
-	frame := "aaa\n" + lipgloss.NewStyle().Foreground(lipgloss.Color("#e8313f")).Render("xx") +
-		logoBox(6, 2) + "\nzzz"
-	row, col, cleaned, found := findMarker(frame)
-	if !found {
-		t.Fatal("marker not found")
-	}
-	if row != 2 || col != 3 {
-		t.Errorf("marker at row %d col %d, want 2, 3", row, col)
-	}
-	if strings.Contains(cleaned, imageMarker) {
-		t.Error("the marker was left in the frame")
+	// 7311 is 0x001C8F, so the colour is #001c8f.
+	if !strings.Contains(box, "0;28;143") && !strings.Contains(box, "001c8f") {
+		t.Errorf("the image id is not carried in the colour:\n%q", box[:min(len(box), 60)])
 	}
 }
 
-// Only the terminal's own answer turns pictures on: everything else leaves a
-// hole in the page where a picture was reserved.
+func stripSGR(s string) string {
+	var b strings.Builder
+	in := false
+	for _, r := range s {
+		switch {
+		case r == 0x1b:
+			in = true
+		case in && r == 'm':
+			in = false
+		case !in:
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
+}
+
+// The picture goes over once, as a virtual placement: the terminal holds it
+// and draws it only where the cells appear. Nothing about it moves the cursor.
+func TestTransmissionIsVirtualAndMovesNothing(t *testing.T) {
+	out := transmitLogo(26, 11)
+	if !strings.Contains(out, "U=1") {
+		t.Error("not a virtual placement: the terminal would draw it at the cursor")
+	}
+	if !strings.Contains(out, "c=26,r=11") {
+		t.Error("the transmission does not say how big to draw it")
+	}
+	for _, forbidden := range []string{"\x1b7", "\x1b8", "\x1b[", "a=p"} {
+		if strings.Contains(out, forbidden) {
+			t.Errorf("the transmission contains %q, which moves or places something", forbidden)
+		}
+	}
+
+	// The chunks have to reassemble into the picture exactly.
+	parts := strings.Split(out, "\x1b\\")
+	var payload strings.Builder
+	for i, part := range parts[:len(parts)-1] {
+		if !strings.HasPrefix(part, "\x1b_G") {
+			t.Fatalf("chunk %d is not an APC sequence", i)
+		}
+		_, data, _ := strings.Cut(strings.TrimPrefix(part, "\x1b_G"), ";")
+		payload.WriteString(data)
+	}
+	decoded, err := base64.StdEncoding.DecodeString(payload.String())
+	if err != nil {
+		t.Fatalf("the chunks do not reassemble: %v", err)
+	}
+	if len(decoded) != len(logoPNG) {
+		t.Errorf("reassembled %d bytes, the picture is %d", len(decoded), len(logoPNG))
+	}
+}
+
+// It is sent once, and again only when the size it should be drawn at changes.
+func TestPictureIsSentOnlyWhenItHasTo(t *testing.T) {
+	m := New(Options{Demo: true})
+	m.Graphics = true
+	if m.sendImage() == nil {
+		t.Fatal("the picture was never sent")
+	}
+	for i := 0; i < 20; i++ {
+		if cmd := m.sendImage(); cmd != nil {
+			t.Fatal("the picture was sent again while nothing changed")
+		}
+	}
+	m.cellW, m.cellH = 8, 19 // the terminal answers, and the shape changes
+	if m.sendImage() == nil {
+		t.Error("the picture was not sent again at its new size")
+	}
+}
+
 func TestOnlyTheTerminalsAnswerTurnsPicturesOn(t *testing.T) {
 	answer := func(id int, payload string) bool {
 		m := New(Options{Demo: true})
@@ -106,95 +171,18 @@ func TestGraphicsDetection(t *testing.T) {
 	}
 }
 
-// Leaving the overview has to take the picture with it.
-func TestPictureIsRemovedWhenSomethingElseIsDrawn(t *testing.T) {
+// The overview is the only page that draws the cells, so leaving it takes the
+// picture with it -- no deletion to remember, and nothing to leave behind.
+func TestOnlyTheOverviewDrawsThePicture(t *testing.T) {
 	m := New(Options{Demo: true})
 	m.Graphics = true
 	drive(t, m, tea.WindowSizeMsg{Width: 140, Height: 45})
 	runCmd(t, m, m.pages[m.cur].Load(m), 0)
-	_ = view(m) // the overview reserves the box and records where it is
-	if m.imageRow == 0 {
-		t.Fatal("the overview did not reserve a box for the picture")
+	if !strings.ContainsRune(view(m), kitty.Placeholder) {
+		t.Fatal("the overview did not draw the picture")
 	}
-	if cmd := m.drawImage(); cmd == nil {
-		t.Fatal("nothing was sent to draw the picture")
-	}
-	drive(t, m, key("tab")) // on to the packages page
-	_ = view(m)
-	if m.imageRow != 0 {
-		t.Fatal("another page reserved a box")
-	}
-	raw, ok := m.drawImage()().(tea.RawMsg)
-	if !ok {
-		t.Fatal("the picture was left on screen")
-	}
-	if !strings.Contains(raw.Msg.(string), "a=d,d=i") {
-		t.Errorf("expected a delete, got %q", raw.Msg)
-	}
-}
-
-// A cell is taller than it is wide, so a square picture needs fewer rows than
-// columns -- and how many depends on the font the terminal is using.
-func TestPictureComesOutSquare(t *testing.T) {
-	for _, tc := range []struct {
-		name         string
-		cellW, cellH int
-		want         int
-	}{
-		{"no answer yet", 0, 0, 13}, // the usual one-to-two
-		{"ubuntu mono at 14", 8, 19, 11},
-		{"a wide font", 10, 20, 13},
-		{"a tall font", 7, 20, 9},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			m := New(Options{Demo: true})
-			m.cellW, m.cellH = tc.cellW, tc.cellH
-			if got := m.logoRows(); got != tc.want {
-				t.Errorf("%d×%d cells: %d columns wants %d rows, got %d",
-					tc.cellW, tc.cellH, logoCols, tc.want, got)
-			}
-		})
-	}
-}
-
-// The terminal's answer about its cell size has to reach the model.
-func TestCellSizeIsRemembered(t *testing.T) {
-	m := New(Options{Demo: true})
-	drive(t, m, uv.CellSizeEvent{Width: 8, Height: 19})
-	if m.cellW != 8 || m.cellH != 19 {
-		t.Errorf("cell size read as %d×%d", m.cellW, m.cellH)
-	}
-}
-
-// Every placement walks the terminal's cursor behind the renderer's back, so
-// it happens when the picture appears or moves, and not otherwise.
-func TestPictureIsPlacedOnlyWhenItMoves(t *testing.T) {
-	m := New(Options{Demo: true})
-	m.Graphics = true
-	drive(t, m, tea.WindowSizeMsg{Width: 140, Height: 45})
-	runCmd(t, m, m.pages[m.cur].Load(m), 0)
-	_ = view(m)
-
-	writes := 0
-	for i := 0; i < 40; i++ {
-		if cmd := m.drawImage(); cmd != nil {
-			writes++
-			// A write has to be followed by a repaint: the cursor was moved
-			// behind the renderer's back to get there.
-			if _, ok := cmd().(tea.BatchMsg); !ok {
-				t.Error("the picture was written without a repaint after it")
-			}
-		}
-		m.frame++
-		_ = view(m)
-	}
-	if writes != 1 {
-		t.Errorf("the picture was written %d times while nothing moved", writes)
-	}
-
-	// Moving it does write again.
-	m.imageRow++
-	if m.drawImage() == nil {
-		t.Error("the picture was not put back after it moved")
+	drive(t, m, key("tab"))
+	if strings.ContainsRune(view(m), kitty.Placeholder) {
+		t.Error("another page drew the picture")
 	}
 }

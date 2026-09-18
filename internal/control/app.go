@@ -87,15 +87,11 @@ type Model struct {
 	// Graphics is set once the terminal has answered that it can draw
 	// pictures. Until then, and everywhere else, the logo is block art.
 	Graphics bool
-	// Where the picture was last asked to go, and whether it is there.
 	// cellW and cellH are the size of a character cell in pixels, which is
-	// what makes a square picture square.
-	cellW, cellH  int
-	imageSent     bool
-	imageOnScreen bool
-	imageRow      int
-	imageCol      int
-	imageAt       [2]int // where the picture was last put
+	// what makes a square picture square. imageSize is the size the picture
+	// was last handed over at.
+	cellW, cellH int
+	imageSize    [2]int
 
 	pages       []Page
 	cur         int
@@ -195,7 +191,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 	case tickMsg:
 		m.frame++
-		return m, tea.Batch(tick(), m.drawImage())
+		return m, tea.Batch(tick(), m.sendImage())
 	case uv.CellSizeEvent:
 		m.cellW, m.cellH = msg.Width, msg.Height
 		return m, nil
@@ -475,21 +471,12 @@ func (m *Model) render() string {
 
 	rule := s.Dim.Render(strings.Repeat(m.Glyphs.Rule, innerW))
 	card := s.Card.Width(cardW).Height(cardH).Render(header + "\n" + rule + "\n" + body + "\n" + help)
-	frame := lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, card)
-
-	// The overview leaves a marker in the corner of the box it reserved; that
-	// is where the picture goes, and the marker itself becomes a space.
-	row, col, frame, found := findMarker(frame)
-	m.imageRow, m.imageCol = row, col
-	if !found {
-		m.imageRow, m.imageCol = 0, 0
-	}
-	return frame
+	return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, card)
 }
 
 // logoRows is how many rows a square picture needs to come out square. A
-// terminal cell is taller than it is wide, but by how much depends on the font
-// -- ask, and fall back to the usual one-to-two when there is no answer.
+// terminal cell is taller than it is wide, but by how much depends on the
+// font -- ask, and fall back to the usual one-to-two when there is no answer.
 func (m *Model) logoRows() int {
 	cellW, cellH := m.cellW, m.cellH
 	if cellW <= 0 || cellH <= 0 {
@@ -499,42 +486,19 @@ func (m *Model) logoRows() int {
 	return max(rows, 4)
 }
 
-// drawImage keeps the picture where the last frame said it should be. It is
-// written outside the frame: Bubble Tea paints cells, and an escape sequence
-// inside a cell is not something it passes through.
-func (m *Model) drawImage() tea.Cmd {
+// sendImage hands the picture to the terminal: once, and again if the size it
+// should be drawn at changes. Where it appears is decided by the cells the
+// overview draws, so there is nothing else to do here.
+func (m *Model) sendImage() tea.Cmd {
 	if !m.Graphics {
 		return nil
 	}
-	if m.imageRow == 0 {
-		if !m.imageOnScreen {
-			return nil
-		}
-		m.imageOnScreen = false
-		return tea.Raw(deleteLogo())
-	}
-	out := ""
-	if !m.imageSent {
-		out, m.imageSent = transmitLogo(), true
-	}
-	// Under the text layer the picture survives the cells being repainted, so
-	// it only has to be placed when it first appears or when it moves. Every
-	// placement walks the cursor behind the renderer's back, so the fewer the
-	// better.
-	if at := [2]int{m.imageRow, m.imageCol}; !m.imageOnScreen || at != m.imageAt {
-		out += placeLogoAt(m.imageRow, m.imageCol, logoCols, m.logoRows())
-		m.imageOnScreen, m.imageAt = true, at
-	}
-	if out == "" {
+	size := [2]int{logoCols, m.logoRows()}
+	if size == m.imageSize {
 		return nil
 	}
-	// Putting the picture on screen moves the terminal's cursor and puts it
-	// back, and a save-and-restore does not carry the pending-wrap state at
-	// the last column with it -- which leaves the renderer's next character a
-	// cell out, as a stray mark beside the frame. Repainting from scratch
-	// afterwards costs one frame and settles it; the picture sits under the
-	// text and is not disturbed.
-	return tea.Batch(tea.Raw(out), tea.ClearScreen)
+	m.imageSize = size
+	return tea.Raw(transmitLogo(size[0], size[1]))
 }
 
 func (m *Model) statusLine() string {

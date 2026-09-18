@@ -7,20 +7,29 @@ import (
 	"os"
 	"strings"
 
-	"github.com/charmbracelet/x/ansi"
+	"charm.land/lipgloss/v2"
+	"github.com/charmbracelet/x/ansi/kitty"
 )
 
 // The real logo, drawn by the terminal itself where that is possible.
 //
 // Ghostty, Kitty and WezTerm speak Kitty's graphics protocol: a picture is
-// handed over once and then placed into a box of character cells. Everywhere
-// else -- a plain console, tmux, ssh to something older -- the block art
-// stands in for it, which is why the art is still there.
+// handed over once, and then drawn wherever certain characters appear. Those
+// characters are ordinary text in the frame, which is the whole point of
+// doing it this way. Placing a picture at a screen position instead means
+// moving the terminal's cursor behind the renderer's back and putting it
+// back -- and a save-and-restore does not carry the pending-wrap state at the
+// last column with it, so one character of the frame lands a cell out and
+// stays there. That was the stray mark beside the frame.
+//
+// Everywhere else -- a plain console, tmux, ssh to something older -- the
+// block art stands in, which is why the art is still there.
 //
 //go:embed logo.png
 var logoPNG []byte
 
-// One id for the one picture this program has.
+// One id for the one picture this program has. The cells carry it too: it is
+// encoded in their colour.
 const logoImageID = 7311
 
 // graphicsQuery asks the terminal whether it understands any of this, by
@@ -45,16 +54,16 @@ func graphicsAllowed() bool {
 	return !strings.HasPrefix(term, "screen") && !strings.HasPrefix(term, "tmux") && term != "linux"
 }
 
-// transmitLogo hands the picture over. It is sent once: placing it afterwards
-// costs a few dozen bytes, while sending it again would cost seventy kilobytes
-// every time.
-func transmitLogo() string {
+// transmitLogo hands the picture over and says how big it should be in cells.
+//
+// U=1 makes it a virtual placement: the terminal keeps the picture and draws
+// nothing until it meets the cells below. Nothing in here moves the cursor.
+func transmitLogo(cols, rows int) string {
 	payload := base64.StdEncoding.EncodeToString(logoPNG)
 	var b strings.Builder
 	first := true
 	for len(payload) > 0 {
-		// The protocol takes the picture in chunks of at most 4096 bytes.
-		n := min(4096, len(payload))
+		n := min(kitty.MaxChunkSize, len(payload))
 		chunk := payload[:n]
 		payload = payload[n:]
 		more := 0
@@ -64,7 +73,8 @@ func transmitLogo() string {
 		if first {
 			// f=100: a PNG. t=d: the bytes are in this escape. q=2: say
 			// nothing back, or the reply arrives as keyboard input.
-			fmt.Fprintf(&b, "\x1b_Ga=t,f=100,t=d,i=%d,q=2,m=%d;%s\x1b\\", logoImageID, more, chunk)
+			fmt.Fprintf(&b, "\x1b_Ga=T,f=100,t=d,i=%d,U=1,c=%d,r=%d,q=2,m=%d;%s\x1b\\",
+				logoImageID, cols, rows, more, chunk)
 			first = false
 			continue
 		}
@@ -73,55 +83,25 @@ func transmitLogo() string {
 	return b.String()
 }
 
-// placeLogoAt draws the picture into a box of cells at an absolute position on
-// the screen.
-//
-// This is written outside the frame Bubble Tea paints, which means moving the
-// terminal's cursor behind the renderer's back: it is saved, walked to the
-// box, and put back, and the cursor is hidden again afterwards in case the
-// restore brought it back. z=-1 puts the picture under the text layer, so
-// repainting the cells it sits in no longer rubs it out -- which is what let
-// this be done once per position instead of several times a second.
-func placeLogoAt(row, col, cols, rows int) string {
-	return fmt.Sprintf("\x1b7\x1b[%d;%dH\x1b_Ga=p,i=%d,p=1,c=%d,r=%d,z=-1,C=1,q=2\x1b\\\x1b8%s",
-		row, col, logoImageID, cols, rows, ansi.HideCursor)
-}
-
-// deleteLogo takes the picture off the screen. A placement is anchored to the
-// screen, not to the text under it, so leaving the overview without this would
-// leave the logo hanging over whatever came next. Lower-case "i" drops the
-// placements and keeps the picture, so coming back costs nothing.
-func deleteLogo() string {
-	return fmt.Sprintf("\x1b_Ga=d,d=i,i=%d,q=2\x1b\\", logoImageID)
-}
-
-// imageMarker is written into the first cell of the reserved box so the frame
-// can be searched for it. Deriving the position from the layout instead would
-// mean re-deriving it every time the layout changed; this cannot drift.
-const imageMarker = "\x00"
-
-// findMarker returns the one-based row and column of the marker in a rendered
-// frame, and the frame with the marker turned back into a space.
-func findMarker(frame string) (row, col int, cleaned string, found bool) {
-	for i, line := range strings.Split(frame, "\n") {
-		at := strings.Index(line, imageMarker)
-		if at < 0 {
-			continue
-		}
-		return i + 1, ansi.StringWidth(line[:at]) + 1,
-			strings.Replace(frame, imageMarker, " ", 1), true
-	}
-	return 0, 0, frame, false
-}
-
-// logoBox is the space the picture is drawn into: plain cells, with the marker
-// in the corner. It measures exactly cols by rows, so the layout around it is
-// the same whether the picture appears or not.
+// logoBox is the picture, written as characters. Each cell holds the
+// placeholder rune and two combining marks naming its row and column in the
+// picture, and the image id rides along in the foreground colour. To anything
+// measuring text this is a block of ordinary characters, cols wide and rows
+// tall -- so the layout around it does not care whether a picture appears.
 func logoBox(cols, rows int) string {
+	// The id is carried as a colour: red, green and blue are its three bytes.
+	style := lipgloss.NewStyle().Foreground(lipgloss.Color(fmt.Sprintf("#%02x%02x%02x",
+		(logoImageID>>16)&0xff, (logoImageID>>8)&0xff, logoImageID&0xff)))
+
 	lines := make([]string, rows)
-	lines[0] = imageMarker + strings.Repeat(" ", cols-1)
-	for i := 1; i < rows; i++ {
-		lines[i] = strings.Repeat(" ", cols)
+	for r := range lines {
+		var b strings.Builder
+		for c := 0; c < cols; c++ {
+			b.WriteRune(kitty.Placeholder)
+			b.WriteRune(kitty.Diacritic(r))
+			b.WriteRune(kitty.Diacritic(c))
+		}
+		lines[r] = style.Render(b.String())
 	}
 	return strings.Join(lines, "\n")
 }
