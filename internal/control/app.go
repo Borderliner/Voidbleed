@@ -39,6 +39,13 @@ type typingPage interface {
 	Typing() bool
 }
 
+// viewPage is a page with more than one view of its own. The overview uses
+// this to send someone straight to the list that deals with what it flagged,
+// rather than telling them which keys to press.
+type viewPage interface {
+	SetView(name string) bool
+}
+
 // Page is one section of the control centre.
 type Page interface {
 	// Label is the sidebar entry; Title and Subtitle head the page.
@@ -157,7 +164,9 @@ func New(opts Options) *Model {
 }
 
 func (m *Model) Init() tea.Cmd {
-	cmds := []tea.Cmd{tick(), m.pages[m.cur].Load(m)}
+	// Nothing here puts a cursor on the screen, and a terminal that leaves
+	// one parked in a corner draws a stray bar over the frame.
+	cmds := []tea.Cmd{tick(), m.pages[m.cur].Load(m), tea.Raw(ansi.HideCursor)}
 	if m.askGraphics {
 		// Both answers, if they come, arrive as events: whether the terminal
 		// draws pictures at all, and how big one of its cells is.
@@ -286,6 +295,22 @@ func (m *Model) goTo(i int) tea.Cmd {
 	return m.pages[m.cur].Load(m)
 }
 
+// goToView opens a section and, where the page has views of its own, the one
+// asked for.
+func (m *Model) goToView(section, view string) tea.Cmd {
+	for i, page := range m.pages {
+		if page.Label() != section {
+			continue
+		}
+		cmd := m.goTo(i)
+		if with, ok := page.(viewPage); ok && view != "" {
+			with.SetView(view)
+		}
+		return cmd
+	}
+	return nil
+}
+
 func (m *Model) passwordKey(msg tea.KeyPressMsg) tea.Cmd {
 	switch msg.String() {
 	case "esc":
@@ -373,6 +398,7 @@ func (m *Model) onRunEvent(ev runEvent) tea.Cmd {
 
 func (m *Model) View() tea.View {
 	v := tea.NewView(m.render())
+	v.Cursor = nil // this program never asks for one
 	v.AltScreen = true
 	v.BackgroundColor = theme.Surface
 	v.ForegroundColor = theme.Text
