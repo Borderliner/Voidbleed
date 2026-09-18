@@ -528,7 +528,13 @@ func (m *Model) drawImage() tea.Cmd {
 	if out == "" {
 		return nil
 	}
-	return tea.Raw(out)
+	// Putting the picture on screen moves the terminal's cursor and puts it
+	// back, and a save-and-restore does not carry the pending-wrap state at
+	// the last column with it -- which leaves the renderer's next character a
+	// cell out, as a stray mark beside the frame. Repainting from scratch
+	// afterwards costs one frame and settles it; the picture sits under the
+	// text and is not disturbed.
+	return tea.Batch(tea.Raw(out), tea.ClearScreen)
 }
 
 func (m *Model) statusLine() string {

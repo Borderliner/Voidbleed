@@ -179,6 +179,11 @@ func TestPictureIsPlacedOnlyWhenItMoves(t *testing.T) {
 	for i := 0; i < 40; i++ {
 		if cmd := m.drawImage(); cmd != nil {
 			writes++
+			// A write has to be followed by a repaint: the cursor was moved
+			// behind the renderer's back to get there.
+			if _, ok := cmd().(tea.BatchMsg); !ok {
+				t.Error("the picture was written without a repaint after it")
+			}
 		}
 		m.frame++
 		_ = view(m)
