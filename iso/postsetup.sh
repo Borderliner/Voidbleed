@@ -29,6 +29,17 @@ $LIVE_USER ALL=(ALL:ALL) NOPASSWD: ALL
 SUDOERS
 chmod 0440 "$ROOTFS/etc/sudoers.d/zz-voidbleed-live"
 
+# Open the installer as soon as the live desktop comes up: nobody should have
+# to find a terminal to install an operating system. local.kdl is included by
+# the skeleton's niri config and is live-only -- the installed system writes
+# its own there.
+cat >"$ROOTFS/etc/skel/.config/niri/local.kdl" <<'NIRI'
+// Written for the live ISO: greet the user with the installer. Closing the
+// window leaves the desktop to explore; "Install Voidbleed" in the app
+// launcher opens it again.
+spawn-at-startup "ghostty" "--title=Install Voidbleed" "-e" "sudo" "voidbleed-installer"
+NIRI
+
 # The live user is created from /etc/skel at boot, always as /home/anon.
 sed -i "s|@HOME@|/home/$LIVE_USER|g" "$ROOTFS/etc/skel/.config/qt6ct/qt6ct.conf"
 
