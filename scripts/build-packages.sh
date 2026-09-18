@@ -104,25 +104,25 @@ build() {
 publish() {
     log "publishing to $repo"
     mkdir -p "$repo"
-    local name f
+    local name ver rev f
     for name in "${pkgs[@]}"; do
-        for f in "$vp"/hostdir/binpkgs/"$name"-[0-9]*.xbps; do
-            [ -e "$f" ] || continue
-            # Skip packages whose name merely starts with $name (e.g. foo-devel).
-            [ "$(xbps-uhelper binpkgver "$f" | xargs xbps-uhelper getpkgname)" = "$name" ] || continue
-            cp -f "$f" "$repo/"
-            # A rebuilt package needs a fresh signature; --sign-pkg keeps old ones.
-            rm -f "$repo/$(basename "$f").sig2"
-            # Voidbleed's packages are rebuilt without a revision bump, so a
-            # copy left in the download cache no longer matches the index.
-            rm -f "$root/build/xbps-cache/$(basename "$f")"*
-        done
+        # Publish exactly the revision the template names. Globbing every
+        # build in hostdir instead would leave xbps-rindex to order them, and
+        # it reads _10 as older than _9.
+        ver="$(sed -n 's/^version=//p' "$root/packages/srcpkgs/$name/template" | head -1)"
+        rev="$(sed -n 's/^revision=//p' "$root/packages/srcpkgs/$name/template" | head -1)"
+        f="$vp/hostdir/binpkgs/$name-${ver}_${rev}.x86_64.xbps"
+        [ -e "$f" ] || die "not built: $(basename "$f")"
+        rm -f "$repo/$name-"[0-9]*.xbps "$repo/$name-"[0-9]*.xbps.sig2
+        cp -f "$f" "$repo/"
+        # Voidbleed's packages are rebuilt without a revision bump, so a copy
+        # left in the download cache no longer matches what is published.
+        rm -f "$root/build/xbps-cache/$name-"[0-9]*.xbps*
     done
-    # Register first (newest version wins), then prune what is no longer
-    # indexed. -f because a rebuild at the same revision keeps its filename:
-    # without it the index would still carry the hash of the previous build.
-    xbps-rindex -f -a "$repo"/*.xbps
-    xbps-rindex -r "$repo"
+    # Rebuild the index from the files that are actually here: it then always
+    # carries their real hashes, rebuild or not.
+    rm -f "$repo"/*-repodata
+    xbps-rindex -a "$repo"/*.xbps
     xbps-rindex --privkey "$VOIDBLEED_SIGNING_KEY" --sign --signedby "$VOIDBLEED_MAINTAINER" "$repo"
     xbps-rindex --privkey "$VOIDBLEED_SIGNING_KEY" --sign-pkg "$repo"/*.xbps
 }
