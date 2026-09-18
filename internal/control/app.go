@@ -120,7 +120,7 @@ func New(opts Options) *Model {
 	}
 	m.askGraphics = !opts.NoGraphics && !g.ASCII && graphicsAllowed()
 	if opts.Demo {
-		m.Client = system.NewDemo(demoRunner{})
+		m.Client = system.NewDemo(&demoRunner{})
 	} else {
 		m.Client = system.New(nil)
 	}

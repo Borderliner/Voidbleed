@@ -7,6 +7,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 
+	"voidbleed/internal/sys"
 	"voidbleed/internal/system"
 )
 
@@ -174,15 +175,32 @@ func (p *packagesPage) key(m *Model, key string) tea.Cmd {
 			p.fill()
 		}
 		return nil
-	case "i", "enter":
+	case "i":
+		names := p.targets()
+		if len(names) == 0 || p.mode != modeSearch {
+			return nil // everything in the other views is already installed
+		}
+		return m.Do("install "+strings.Join(names, " "), "", true, system.InstallCmd(names...))
+	case "enter":
 		names := p.targets()
 		if len(names) == 0 {
 			return nil
 		}
-		if p.mode == modeInstalled {
-			return nil // already here
+		switch p.mode {
+		case modeSearch:
+			return m.Do("install "+strings.Join(names, " "), "", true, system.InstallCmd(names...))
+		case modeUpdates:
+			return m.Do("update "+strings.Join(names, " "), "", true, system.InstallCmd(names...))
+		case modeOrphans:
+			return p.keep(m, names)
 		}
-		return m.Do("install "+strings.Join(names, " "), "", true, system.InstallCmd(names...))
+		return nil
+	case "k":
+		names := p.targets()
+		if len(names) == 0 || p.mode == modeSearch {
+			return nil
+		}
+		return p.keep(m, names)
 	case "x", "delete":
 		names := p.targets()
 		if len(names) == 0 || p.mode == modeSearch {
@@ -208,6 +226,17 @@ func (p *packagesPage) key(m *Model, key string) tea.Cmd {
 		return p.detailCmd(m)
 	}
 	return nil
+}
+
+// keep marks packages as wanted for their own sake, which is what stops xbps
+// calling them orphans. Installing them again would do nothing: they are
+// installed already, and only the flag says otherwise.
+func (p *packagesPage) keep(m *Model, names []string) tea.Cmd {
+	cmds := make([]sys.Cmd, 0, len(names))
+	for _, name := range names {
+		cmds = append(cmds, system.MarkManualCmd(name))
+	}
+	return m.Do("keep "+strings.Join(names, " "), "", true, cmds...)
 }
 
 // targets is what an action applies to: everything marked, or the row under
@@ -359,9 +388,10 @@ func (p *packagesPage) Help(m *Model) []Binding {
 	case modeUpdates:
 		help = append(help, Binding{"u", "update all"})
 	case modeOrphans:
-		help = append(help, Binding{"x", "remove"}, Binding{"c", "remove them all"})
+		help = append(help, Binding{"enter", "keep"}, Binding{"x", "remove"}, Binding{"c", "remove them all"})
 	default:
-		help = append(help, Binding{"x", "remove"}, Binding{"u", "update all"}, Binding{"c", "clean"})
+		help = append(help, Binding{"x", "remove"}, Binding{"k", "keep"},
+			Binding{"u", "update all"}, Binding{"c", "clean"})
 	}
 	return help
 }

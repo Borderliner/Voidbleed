@@ -152,3 +152,14 @@ func TestUpdateCheckDoesNotNeedRoot(t *testing.T) {
 		}
 	}
 }
+
+// "Keep this" is a flag in the package database, not an install.
+func TestKeepIsAFlagNotAnInstall(t *testing.T) {
+	cmd := MarkManualCmd("dejavu-fonts-ttf").String()
+	if cmd != "xbps-pkgdb -m manual dejavu-fonts-ttf" {
+		t.Errorf("keep runs %q", cmd)
+	}
+	if MarkAutoCmd("x").String() != "xbps-pkgdb -m auto x" {
+		t.Errorf("the other direction runs %q", MarkAutoCmd("x").String())
+	}
+}

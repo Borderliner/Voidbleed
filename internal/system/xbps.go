@@ -136,6 +136,19 @@ func RemoveCmd(name string, withDependencies bool) sys.Cmd {
 	return sys.Command("xbps-remove", append(args, name)...)
 }
 
+// MarkManualCmd says a package was wanted for its own sake. xbps calls a
+// package orphaned when it was pulled in as a dependency and nothing needs it
+// any more; this clears that flag, which is what "keep this" means.
+func MarkManualCmd(name string) sys.Cmd {
+	return sys.Command("xbps-pkgdb", "-m", "manual", name)
+}
+
+// MarkAutoCmd is the other direction: treat it as a dependency again, so it
+// goes when the last thing needing it goes.
+func MarkAutoCmd(name string) sys.Cmd {
+	return sys.Command("xbps-pkgdb", "-m", "auto", name)
+}
+
 func UpdateCmd() sys.Cmd  { return sys.Command("xbps-install", "-Suy") }
 func SyncCmd() sys.Cmd    { return sys.Command("xbps-install", "-S") }
 func CleanUpCmd() sys.Cmd { return sys.Command("xbps-remove", "-Ooy") }

@@ -4,19 +4,45 @@ import (
 	"context"
 	"io/fs"
 	"strings"
+	"sync"
 
 	"voidbleed/internal/sys"
 )
 
 // demoRunner answers every command from canned output. It is how the
 // interface is developed and reviewed without a machine to change, and what
-// the tests drive.
-type demoRunner struct{}
+// the tests drive; it also remembers what it was asked to run.
+type demoRunner struct {
+	mu   sync.Mutex
+	seen []string
+}
 
-func (demoRunner) Run(ctx context.Context, cmd sys.Cmd) error { return nil }
+func (d *demoRunner) record(line string) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	d.seen = append(d.seen, line)
+}
 
-func (demoRunner) Output(ctx context.Context, cmd sys.Cmd) (string, error) {
+// ran reports whether a command containing text was run.
+func (d *demoRunner) ran(text string) bool {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	for _, line := range d.seen {
+		if strings.Contains(line, text) {
+			return true
+		}
+	}
+	return false
+}
+
+func (d *demoRunner) Run(ctx context.Context, cmd sys.Cmd) error {
+	d.record(cmd.String())
+	return nil
+}
+
+func (d *demoRunner) Output(ctx context.Context, cmd sys.Cmd) (string, error) {
 	line := cmd.String()
+	d.record(line)
 	switch {
 	case strings.Contains(line, "xbps-query -l"):
 		return `ii btop-1.4.7_1                          Monitor of resources
@@ -104,14 +130,14 @@ To                         Action      From
 	return "", nil
 }
 
-func (demoRunner) WriteFile(string, []byte, fs.FileMode) error { return nil }
-func (demoRunner) AppendFile(string, []byte) error             { return nil }
-func (demoRunner) ReadFile(string) ([]byte, error)             { return nil, nil }
-func (demoRunner) MkdirAll(string, fs.FileMode) error          { return nil }
-func (demoRunner) Symlink(string, string) error                { return nil }
-func (demoRunner) RemoveAll(string) error                      { return nil }
-func (demoRunner) Exists(string) bool                          { return false }
-func (demoRunner) Glob(string) ([]string, error)               { return nil, nil }
+func (*demoRunner) WriteFile(string, []byte, fs.FileMode) error { return nil }
+func (*demoRunner) AppendFile(string, []byte) error             { return nil }
+func (*demoRunner) ReadFile(string) ([]byte, error)             { return nil, nil }
+func (*demoRunner) MkdirAll(string, fs.FileMode) error          { return nil }
+func (*demoRunner) Symlink(string, string) error                { return nil }
+func (*demoRunner) RemoveAll(string) error                      { return nil }
+func (*demoRunner) Exists(string) bool                          { return false }
+func (*demoRunner) Glob(string) ([]string, error)               { return nil, nil }
 
 // demoDescriptions keeps the canned detail pane honest: it answers for the
 // package that was asked about.

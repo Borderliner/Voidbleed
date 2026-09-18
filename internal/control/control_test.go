@@ -142,6 +142,24 @@ func TestOrphansCanBeSeen(t *testing.T) {
 	}
 }
 
+// Keeping an orphan means telling xbps it was wanted for its own sake.
+// Installing it again looks like it should work and does nothing at all: the
+// package is already there, and only the flag says otherwise.
+func TestKeepingAnOrphanClearsTheFlag(t *testing.T) {
+	m := newTestModel(t)
+	onPage(t, m, "Packages")
+	drive(t, m, key("right"), key("right")) // installed -> updates -> orphans
+	drive(t, m, key("enter"))
+
+	runner := m.Client.Run.(*demoRunner)
+	if !runner.ran("xbps-pkgdb -m manual dejavu-fonts-ttf") {
+		t.Errorf("keeping the orphan did not mark it manual; ran:\n%v", runner.seen)
+	}
+	if runner.ran("xbps-install -Sy dejavu-fonts-ttf") {
+		t.Error("keeping the orphan reinstalled it, which changes nothing")
+	}
+}
+
 // A machine that cannot take snapshots is not shown a snapshots page.
 func TestSnapshotsOnlyWhereTheyWork(t *testing.T) {
 	m := New(Options{}) // this machine, not the demo one
