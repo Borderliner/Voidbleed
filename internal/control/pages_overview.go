@@ -15,13 +15,17 @@ type overviewPage struct {
 	info    system.Overview
 	loading bool
 	loaded  bool
-	// sent is the size the picture was last handed to the terminal at; it is
-	// sent again after a resize, and not otherwise.
-	sent string
 }
 
 type overviewFactsMsg struct{ info system.Overview }
 type overviewCountsMsg struct{ counts system.Overview }
+
+// A terminal cell is about twice as tall as it is wide, so a square picture
+// wants half as many rows as columns.
+const (
+	logoCols = 26
+	logoRows = 13
+)
 
 func newOverviewPage() *overviewPage { return &overviewPage{} }
 
@@ -98,9 +102,7 @@ func (p *overviewPage) View(m *Model, width, height int) string {
 	logo, wordmark := theme.Logo(m.Glyphs), theme.Wordmark(m.Glyphs)
 	logoW, logoH := lipgloss.Width(logo), lipgloss.Height(logo)
 	if m.Graphics {
-		// A terminal cell is about twice as tall as it is wide, so a square
-		// picture wants half as many rows as columns.
-		logoW, logoH = 26, 13
+		logoW, logoH = logoCols, logoRows
 	}
 	bodyH := lipgloss.Height(body)
 
@@ -109,9 +111,7 @@ func (p *overviewPage) View(m *Model, width, height int) string {
 	case width >= logoW && height >= logoH+bodyH+3:
 		mark := s.Accent.Render(logo)
 		if m.Graphics {
-			key := itoa(logoW) + "x" + itoa(logoH)
-			mark = logoBox(logoW, logoH, p.sent != key)
-			p.sent = key
+			mark = logoBox(logoCols, logoRows)
 		}
 		head = center(width, mark) + "\n" + center(width, s.Accent.Render(wordmark)) + "\n\n"
 	case width >= lipgloss.Width(wordmark) && height >= bodyH+2:

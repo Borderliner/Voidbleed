@@ -6,14 +6,15 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+	uv "github.com/charmbracelet/ultraviolet"
+	"github.com/charmbracelet/x/ansi/kitty"
 )
 
-// The picture is drawn with escape sequences sitting inside ordinary lines of
-// spaces. If anything measured them as having width, every layout on the page
-// would shift, so this is the property that matters most.
+// The box the picture goes into is plain cells, so the layout around it is
+// the same whether the picture appears or not.
 func TestLogoBoxMeasuresAsPlainCells(t *testing.T) {
 	for _, size := range [][2]int{{26, 13}, {20, 10}, {40, 20}} {
-		box := logoBox(size[0], size[1], true)
+		box := logoBox(size[0], size[1])
 		if w := lipgloss.Width(box); w != size[0] {
 			t.Errorf("%dx%d box measured %d columns wide", size[0], size[1], w)
 		}
@@ -23,24 +24,58 @@ func TestLogoBoxMeasuresAsPlainCells(t *testing.T) {
 	}
 }
 
-// The picture goes to the terminal once; placing it afterwards must stay
-// small, because it happens on every frame.
+// The picture is sent once and placed cheaply, because placing happens again
+// and again while the overview is on screen.
 func TestPictureIsSentOnceAndPlacedCheaply(t *testing.T) {
-	first := logoBox(26, 13, true)
-	later := logoBox(26, 13, false)
-	if len(first) < len(logoPNG) {
-		t.Error("the first frame does not carry the picture")
+	if len(transmitLogo()) < len(logoPNG) {
+		t.Error("the transmission does not carry the picture")
 	}
-	if len(later) > 512 {
-		t.Errorf("placing the picture costs %d bytes a frame", len(later))
+	place := placeLogoAt(10, 20, 26, 13)
+	if len(place) > 128 {
+		t.Errorf("placing the picture costs %d bytes", len(place))
 	}
-	if !strings.Contains(later, "a=p,i=") {
-		t.Errorf("no placement escape:\n%q", later)
+	for _, want := range []string{"\x1b7", "\x1b[10;20H", "a=p,i=7311", "c=26,r=13", "C=1", "\x1b8"} {
+		if !strings.Contains(place, want) {
+			t.Errorf("placement is missing %q:\n%q", want, place)
+		}
 	}
-	// Saved and restored: the cursor has to come back to where the frame
-	// expects it, or the rest of the screen lands in the wrong place.
-	if !strings.HasPrefix(strings.TrimLeft(later, " \n"), "\x1b7") || !strings.HasSuffix(later, "\x1b8") {
-		t.Errorf("the cursor is not saved and restored:\n%q", later)
+}
+
+// The box is found by the marker it leaves, not by re-deriving the layout.
+func TestMarkerLocatesTheBox(t *testing.T) {
+	frame := "aaa\n" + lipgloss.NewStyle().Foreground(lipgloss.Color("#e8313f")).Render("xx") +
+		logoBox(6, 2) + "\nzzz"
+	row, col, cleaned, found := findMarker(frame)
+	if !found {
+		t.Fatal("marker not found")
+	}
+	if row != 2 || col != 3 {
+		t.Errorf("marker at row %d col %d, want 2, 3", row, col)
+	}
+	if strings.Contains(cleaned, imageMarker) {
+		t.Error("the marker was left in the frame")
+	}
+}
+
+// Only the terminal's own answer turns pictures on: everything else leaves a
+// hole in the page where a picture was reserved.
+func TestOnlyTheTerminalsAnswerTurnsPicturesOn(t *testing.T) {
+	answer := func(id int, payload string) bool {
+		m := New(Options{Demo: true})
+		drive(t, m, uv.KittyGraphicsEvent{
+			Options: kitty.Options{ID: id},
+			Payload: []byte(payload),
+		})
+		return m.Graphics
+	}
+	if !answer(logoImageID, "OK") {
+		t.Error("a terminal saying OK was not believed")
+	}
+	if answer(logoImageID, "ENOTSUPPORTED:no graphics") {
+		t.Error("a refusal was read as support")
+	}
+	if answer(1, "OK") {
+		t.Error("an answer about another image was taken as ours")
 	}
 }
 
@@ -51,13 +86,11 @@ func TestGraphicsDetection(t *testing.T) {
 		want bool
 	}{
 		{"ghostty", map[string]string{"TERM": "xterm-ghostty"}, true},
-		{"kitty", map[string]string{"TERM": "xterm-kitty"}, true},
-		{"wezterm", map[string]string{"TERM": "xterm-256color", "TERM_PROGRAM": "WezTerm"}, true},
-		{"foot", map[string]string{"TERM": "foot"}, false},
+		{"foot", map[string]string{"TERM": "foot"}, true}, // ask; the answer decides
 		{"linux console", map[string]string{"TERM": "linux"}, false},
 		{"inside tmux", map[string]string{"TERM": "xterm-ghostty", "TMUX": "/tmp/tmux-1000/default"}, false},
 		{"turned off", map[string]string{"TERM": "xterm-ghostty", "VOIDBLEED_GRAPHICS": "0"}, false},
-		{"turned on", map[string]string{"TERM": "foot", "VOIDBLEED_GRAPHICS": "1"}, true},
+		{"turned on inside tmux", map[string]string{"TMUX": "x", "VOIDBLEED_GRAPHICS": "1"}, true},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			for _, key := range []string{"TERM", "TERM_PROGRAM", "TMUX", "STY", "KITTY_WINDOW_ID", "VOIDBLEED_GRAPHICS"} {
@@ -66,8 +99,8 @@ func TestGraphicsDetection(t *testing.T) {
 			for key, value := range tc.env {
 				t.Setenv(key, value)
 			}
-			if got := graphicsEnv(); got != tc.want {
-				t.Errorf("graphics = %v, want %v", got, tc.want)
+			if got := graphicsAllowed(); got != tc.want {
+				t.Errorf("asking the terminal = %v, want %v", got, tc.want)
 			}
 		})
 	}
@@ -79,15 +112,23 @@ func TestPictureIsRemovedWhenSomethingElseIsDrawn(t *testing.T) {
 	m.Graphics = true
 	drive(t, m, tea.WindowSizeMsg{Width: 140, Height: 45})
 	runCmd(t, m, m.pages[m.cur].Load(m), 0)
-	if !strings.Contains(view(m), "a=p,i=") {
-		t.Fatal("the overview did not place the picture")
+	_ = view(m) // the overview reserves the box and records where it is
+	if m.imageRow == 0 {
+		t.Fatal("the overview did not reserve a box for the picture")
+	}
+	if cmd := m.drawImage(); cmd == nil {
+		t.Fatal("nothing was sent to draw the picture")
 	}
 	drive(t, m, key("tab")) // on to the packages page
-	out := view(m)
-	if !strings.Contains(out, "a=d,d=i") {
-		t.Errorf("the picture was left on screen:\n%q", out[:min(len(out), 200)])
+	_ = view(m)
+	if m.imageRow != 0 {
+		t.Fatal("another page reserved a box")
 	}
-	if strings.Contains(out, "a=p,i=") {
-		t.Error("another page placed the picture")
+	raw, ok := m.drawImage()().(tea.RawMsg)
+	if !ok {
+		t.Fatal("the picture was left on screen")
+	}
+	if !strings.Contains(raw.Msg.(string), "a=d,d=i") {
+		t.Errorf("expected a delete, got %q", raw.Msg)
 	}
 }

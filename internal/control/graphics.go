@@ -6,55 +6,48 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/charmbracelet/x/ansi"
 )
 
 // The real logo, drawn by the terminal itself where that is possible.
 //
-// Ghostty, Kitty and WezTerm all speak Kitty's graphics protocol: a picture is
+// Ghostty, Kitty and WezTerm speak Kitty's graphics protocol: a picture is
 // handed over once and then placed into a box of character cells. Everywhere
-// else -- a plain console, a terminal over ssh, tmux -- the block art stands in
-// for it, which is why the art is still there.
+// else -- a plain console, tmux, ssh to something older -- the block art
+// stands in for it, which is why the art is still there.
 //
 //go:embed logo.png
 var logoPNG []byte
 
-// One id for the one image this program has. Kitty's protocol namespaces
-// images per terminal, so a number nothing else is likely to pick will do.
+// One id for the one picture this program has.
 const logoImageID = 7311
 
-// graphicsEnv reports whether the terminal draws pictures, from what it says
-// about itself. Querying it properly means a handshake in the middle of a
-// Bubble Tea frame; the environment is good enough, and VOIDBLEED_GRAPHICS
-// settles it either way.
-func graphicsEnv() bool {
+// graphicsQuery asks the terminal whether it understands any of this, by
+// sending it a single transparent pixel and waiting to be told "OK". Guessing
+// from $TERM gets it wrong in both directions -- a terminal that cannot draw
+// pictures would leave a hole in the page where one was reserved.
+const graphicsQuery = "\x1b_Gi=7311,s=1,v=1,a=q,t=d,f=24;AAAA\x1b\\"
+
+// graphicsAllowed reports whether to ask at all. tmux and screen swallow these
+// sequences unless told otherwise, and getting that wrong prints line noise.
+func graphicsAllowed() bool {
 	switch os.Getenv("VOIDBLEED_GRAPHICS") {
 	case "0", "off", "no":
 		return false
 	case "1", "on", "yes":
 		return true
 	}
-	// tmux and screen pass escape sequences through only when asked to, and
-	// getting that wrong looks like line noise.
-	if term := os.Getenv("TERM"); strings.HasPrefix(term, "screen") || strings.HasPrefix(term, "tmux") {
-		return false
-	}
 	if os.Getenv("TMUX") != "" || os.Getenv("STY") != "" {
 		return false
 	}
-	switch os.Getenv("TERM") {
-	case "xterm-ghostty", "ghostty", "xterm-kitty":
-		return true
-	}
-	switch strings.ToLower(os.Getenv("TERM_PROGRAM")) {
-	case "ghostty", "wezterm":
-		return true
-	}
-	return os.Getenv("KITTY_WINDOW_ID") != ""
+	term := os.Getenv("TERM")
+	return !strings.HasPrefix(term, "screen") && !strings.HasPrefix(term, "tmux") && term != "linux"
 }
 
-// transmitLogo hands the picture to the terminal. It is sent once: placing it
-// afterwards costs a few dozen bytes, while sending it again would cost
-// seventy kilobytes on every frame.
+// transmitLogo hands the picture over. It is sent once: placing it afterwards
+// costs a few dozen bytes, while sending it again would cost seventy kilobytes
+// every time.
 func transmitLogo() string {
 	payload := base64.StdEncoding.EncodeToString(logoPNG)
 	var b strings.Builder
@@ -69,7 +62,8 @@ func transmitLogo() string {
 			more = 1
 		}
 		if first {
-			// f=100: a PNG. t=d: the bytes are here, in this escape.
+			// f=100: a PNG. t=d: the bytes are in this escape. q=2: say
+			// nothing back, or the reply arrives as keyboard input.
 			fmt.Fprintf(&b, "\x1b_Ga=t,f=100,t=d,i=%d,q=2,m=%d;%s\x1b\\", logoImageID, more, chunk)
 			first = false
 			continue
@@ -79,35 +73,49 @@ func transmitLogo() string {
 	return b.String()
 }
 
-// placeLogo draws the picture into a box of cells whose bottom-right corner is
-// where the cursor is now. Repainting the box with spaces rubs the picture
-// out, so this is emitted after them, on every frame: the cursor is saved,
-// walked back to the top-left of the box, and put back.
-func placeLogo(cols, rows int) string {
-	return fmt.Sprintf("\x1b7\x1b[%dA\x1b[%dD\x1b_Ga=p,i=%d,p=1,c=%d,r=%d,C=1,q=2\x1b\\\x1b8",
-		rows-1, cols, logoImageID, cols, rows)
-}
-
-// logoBox is the picture as lines of spaces with the escapes attached, ready
-// to be laid out like any other block of text: the escapes have no width, so
-// the box measures exactly cols by rows.
-func logoBox(cols, rows int, transmit bool) string {
-	blank := strings.Repeat(" ", cols)
-	lines := make([]string, rows)
-	for i := range lines {
-		lines[i] = blank
-	}
-	out := strings.Join(lines, "\n") + placeLogo(cols, rows)
-	if transmit {
-		return transmitLogo() + out
-	}
-	return out
+// placeLogoAt draws the picture into a box of cells at an absolute position on
+// the screen. This is written outside the frame Bubble Tea paints, so it saves
+// the cursor, goes where the box is, and puts the cursor back.
+func placeLogoAt(row, col, cols, rows int) string {
+	return fmt.Sprintf("\x1b7\x1b[%d;%dH\x1b_Ga=p,i=%d,p=1,c=%d,r=%d,C=1,q=2\x1b\\\x1b8",
+		row, col, logoImageID, cols, rows)
 }
 
 // deleteLogo takes the picture off the screen. A placement is anchored to the
 // screen, not to the text under it, so leaving the overview without this would
-// leave the logo floating over whatever came next. Lower-case "i" removes the
-// placements and keeps the picture itself, so coming back costs nothing.
+// leave the logo hanging over whatever came next. Lower-case "i" drops the
+// placements and keeps the picture, so coming back costs nothing.
 func deleteLogo() string {
 	return fmt.Sprintf("\x1b_Ga=d,d=i,i=%d,q=2\x1b\\", logoImageID)
+}
+
+// imageMarker is written into the first cell of the reserved box so the frame
+// can be searched for it. Deriving the position from the layout instead would
+// mean re-deriving it every time the layout changed; this cannot drift.
+const imageMarker = "\x00"
+
+// findMarker returns the one-based row and column of the marker in a rendered
+// frame, and the frame with the marker turned back into a space.
+func findMarker(frame string) (row, col int, cleaned string, found bool) {
+	for i, line := range strings.Split(frame, "\n") {
+		at := strings.Index(line, imageMarker)
+		if at < 0 {
+			continue
+		}
+		return i + 1, ansi.StringWidth(line[:at]) + 1,
+			strings.Replace(frame, imageMarker, " ", 1), true
+	}
+	return 0, 0, frame, false
+}
+
+// logoBox is the space the picture is drawn into: plain cells, with the marker
+// in the corner. It measures exactly cols by rows, so the layout around it is
+// the same whether the picture appears or not.
+func logoBox(cols, rows int) string {
+	lines := make([]string, rows)
+	lines[0] = imageMarker + strings.Repeat(" ", cols-1)
+	for i := 1; i < rows; i++ {
+		lines[i] = strings.Repeat(" ", cols)
+	}
+	return strings.Join(lines, "\n")
 }

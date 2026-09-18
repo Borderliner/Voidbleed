@@ -12,7 +12,9 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 
+	uv "github.com/charmbracelet/ultraviolet"
 	"voidbleed/internal/sys"
+
 	"voidbleed/internal/system"
 	"voidbleed/internal/theme"
 )
@@ -63,14 +65,18 @@ type Model struct {
 	Client *system.Client
 	Glyphs theme.GlyphSet
 	Styles theme.Styles
-	// Graphics is set when the terminal can draw the logo itself.
+	// Graphics is set once the terminal has answered that it can draw
+	// pictures. Until then, and everywhere else, the logo is block art.
 	Graphics bool
-	// imageOnScreen tracks the logo placement, so it can be taken off when
-	// something else is drawn where it sits.
+	// Where the picture was last asked to go, and whether it is there.
+	imageSent     bool
 	imageOnScreen bool
+	imageRow      int
+	imageCol      int
 
-	pages []Page
-	cur   int
+	pages       []Page
+	cur         int
+	askGraphics bool
 
 	width, height int
 	frame         int
@@ -107,12 +113,12 @@ func tick() tea.Cmd {
 func New(opts Options) *Model {
 	g := theme.Detect()
 	m := &Model{
-		Glyphs:   g,
-		Styles:   theme.NewStyles(g),
-		Graphics: !opts.NoGraphics && !g.ASCII && graphicsEnv(),
-		width:    100,
-		height:   32,
+		Glyphs: g,
+		Styles: theme.NewStyles(g),
+		width:  100,
+		height: 32,
 	}
+	m.askGraphics = !opts.NoGraphics && !g.ASCII && graphicsAllowed()
 	if opts.Demo {
 		m.Client = system.NewDemo(demoRunner{})
 	} else {
@@ -140,7 +146,12 @@ func New(opts Options) *Model {
 }
 
 func (m *Model) Init() tea.Cmd {
-	return tea.Batch(tick(), m.pages[m.cur].Load(m))
+	cmds := []tea.Cmd{tick(), m.pages[m.cur].Load(m)}
+	if m.askGraphics {
+		// The answer, if there is one, arrives as an APC event.
+		cmds = append(cmds, tea.Raw(graphicsQuery))
+	}
+	return tea.Batch(cmds...)
 }
 
 func (m *Model) Page() Page { return m.pages[m.cur] }
@@ -158,7 +169,14 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 	case tickMsg:
 		m.frame++
-		return m, tick()
+		return m, tea.Batch(tick(), m.drawImage())
+	case uv.KittyGraphicsEvent:
+		// The terminal answered the question asked at startup. Only its own
+		// "OK", for the picture this program asked about, turns them on.
+		if msg.Options.ID == logoImageID && string(msg.Payload) == "OK" {
+			m.Graphics = true
+		}
+		return m, nil
 	case runEvent:
 		return m, m.onRunEvent(msg)
 	case tea.KeyPressMsg:
@@ -351,14 +369,6 @@ func (m *Model) cardSize() (int, int) {
 
 func (m *Model) render() string {
 	s := m.Styles
-	// Only the overview draws the logo, and only when nothing covers it.
-	prefix := ""
-	showing := m.Graphics && m.over == overlayNone && m.pages[m.cur].Label() == "Overview"
-	if m.imageOnScreen && !showing {
-		prefix = deleteLogo()
-	}
-	m.imageOnScreen = showing
-
 	cardW, cardH := m.cardSize()
 	innerW, innerH := cardW-6, cardH-2
 
@@ -409,7 +419,46 @@ func (m *Model) render() string {
 
 	rule := s.Dim.Render(strings.Repeat(m.Glyphs.Rule, innerW))
 	card := s.Card.Width(cardW).Height(cardH).Render(header + "\n" + rule + "\n" + body + "\n" + help)
-	return prefix + lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, card)
+	frame := lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, card)
+
+	// The overview leaves a marker in the corner of the box it reserved; that
+	// is where the picture goes, and the marker itself becomes a space.
+	row, col, frame, found := findMarker(frame)
+	m.imageRow, m.imageCol = row, col
+	if !found {
+		m.imageRow, m.imageCol = 0, 0
+	}
+	return frame
+}
+
+// drawImage keeps the picture where the last frame said it should be. It is
+// written outside the frame: Bubble Tea paints cells, and an escape sequence
+// inside a cell is not something it passes through.
+func (m *Model) drawImage() tea.Cmd {
+	if !m.Graphics {
+		return nil
+	}
+	if m.imageRow == 0 {
+		if !m.imageOnScreen {
+			return nil
+		}
+		m.imageOnScreen = false
+		return tea.Raw(deleteLogo())
+	}
+	out := ""
+	if !m.imageSent {
+		out, m.imageSent = transmitLogo(), true
+	}
+	// Repainting the cells rubs the picture out, so it is placed again every
+	// few frames; the escape is small enough that this costs nothing.
+	if !m.imageOnScreen || m.frame%8 == 0 {
+		out += placeLogoAt(m.imageRow, m.imageCol, logoCols, logoRows)
+		m.imageOnScreen = true
+	}
+	if out == "" {
+		return nil
+	}
+	return tea.Raw(out)
 }
 
 func (m *Model) statusLine() string {
