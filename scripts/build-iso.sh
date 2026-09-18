@@ -150,7 +150,7 @@ printf '%s\n' "${groups[@]}" >"$generated/usr/share/voidbleed/live-groups.txt"
     -I "$root/iso/include" \
     -I "$generated" \
     -x "$root/iso/postsetup.sh" \
-    -C "live.shell=/usr/bin/fish"
+    -C "live.shell=/usr/bin/fish splash"
 
 chown "$owner:" "$out"
 chown -R "$owner:" "$work"
