@@ -20,12 +20,9 @@ type overviewPage struct {
 type overviewFactsMsg struct{ info system.Overview }
 type overviewCountsMsg struct{ counts system.Overview }
 
-// A terminal cell is about twice as tall as it is wide, so a square picture
-// wants half as many rows as columns.
-const (
-	logoCols = 26
-	logoRows = 13
-)
+// logoCols is how wide the picture is drawn; the rows follow from the
+// terminal's cell size, so that it comes out square.
+const logoCols = 26
 
 func newOverviewPage() *overviewPage { return &overviewPage{} }
 
@@ -102,7 +99,7 @@ func (p *overviewPage) View(m *Model, width, height int) string {
 	logo, wordmark := theme.Logo(m.Glyphs), theme.Wordmark(m.Glyphs)
 	logoW, logoH := lipgloss.Width(logo), lipgloss.Height(logo)
 	if m.Graphics {
-		logoW, logoH = logoCols, logoRows
+		logoW, logoH = logoCols, m.logoRows()
 	}
 	bodyH := lipgloss.Height(body)
 
@@ -111,7 +108,7 @@ func (p *overviewPage) View(m *Model, width, height int) string {
 	case width >= logoW && height >= logoH+bodyH+3:
 		mark := s.Brand.Render(logo)
 		if m.Graphics {
-			mark = logoBox(logoCols, logoRows)
+			mark = logoBox(logoCols, m.logoRows())
 		}
 		head = center(width, mark) + "\n" + center(width, s.Brand.Render(wordmark)) + "\n\n"
 	case width >= lipgloss.Width(wordmark) && height >= bodyH+2:

@@ -132,3 +132,36 @@ func TestPictureIsRemovedWhenSomethingElseIsDrawn(t *testing.T) {
 		t.Errorf("expected a delete, got %q", raw.Msg)
 	}
 }
+
+// A cell is taller than it is wide, so a square picture needs fewer rows than
+// columns -- and how many depends on the font the terminal is using.
+func TestPictureComesOutSquare(t *testing.T) {
+	for _, tc := range []struct {
+		name         string
+		cellW, cellH int
+		want         int
+	}{
+		{"no answer yet", 0, 0, 13}, // the usual one-to-two
+		{"ubuntu mono at 14", 8, 19, 11},
+		{"a wide font", 10, 20, 13},
+		{"a tall font", 7, 20, 9},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			m := New(Options{Demo: true})
+			m.cellW, m.cellH = tc.cellW, tc.cellH
+			if got := m.logoRows(); got != tc.want {
+				t.Errorf("%d×%d cells: %d columns wants %d rows, got %d",
+					tc.cellW, tc.cellH, logoCols, tc.want, got)
+			}
+		})
+	}
+}
+
+// The terminal's answer about its cell size has to reach the model.
+func TestCellSizeIsRemembered(t *testing.T) {
+	m := New(Options{Demo: true})
+	drive(t, m, uv.CellSizeEvent{Width: 8, Height: 19})
+	if m.cellW != 8 || m.cellH != 19 {
+		t.Errorf("cell size read as %d×%d", m.cellW, m.cellH)
+	}
+}

@@ -13,6 +13,7 @@ import (
 	"charm.land/lipgloss/v2"
 
 	uv "github.com/charmbracelet/ultraviolet"
+	"github.com/charmbracelet/x/ansi"
 	"voidbleed/internal/sys"
 
 	"voidbleed/internal/system"
@@ -69,6 +70,9 @@ type Model struct {
 	// pictures. Until then, and everywhere else, the logo is block art.
 	Graphics bool
 	// Where the picture was last asked to go, and whether it is there.
+	// cellW and cellH are the size of a character cell in pixels, which is
+	// what makes a square picture square.
+	cellW, cellH  int
 	imageSent     bool
 	imageOnScreen bool
 	imageRow      int
@@ -148,8 +152,9 @@ func New(opts Options) *Model {
 func (m *Model) Init() tea.Cmd {
 	cmds := []tea.Cmd{tick(), m.pages[m.cur].Load(m)}
 	if m.askGraphics {
-		// The answer, if there is one, arrives as an APC event.
-		cmds = append(cmds, tea.Raw(graphicsQuery))
+		// Both answers, if they come, arrive as events: whether the terminal
+		// draws pictures at all, and how big one of its cells is.
+		cmds = append(cmds, tea.Raw(graphicsQuery), tea.Raw(ansi.WindowOp(ansi.RequestCellSizeWinOp)))
 	}
 	return tea.Batch(cmds...)
 }
@@ -170,6 +175,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tickMsg:
 		m.frame++
 		return m, tea.Batch(tick(), m.drawImage())
+	case uv.CellSizeEvent:
+		m.cellW, m.cellH = msg.Width, msg.Height
+		return m, nil
 	case uv.KittyGraphicsEvent:
 		// The terminal answered the question asked at startup. Only its own
 		// "OK", for the picture this program asked about, turns them on.
@@ -431,6 +439,18 @@ func (m *Model) render() string {
 	return frame
 }
 
+// logoRows is how many rows a square picture needs to come out square. A
+// terminal cell is taller than it is wide, but by how much depends on the font
+// -- ask, and fall back to the usual one-to-two when there is no answer.
+func (m *Model) logoRows() int {
+	cellW, cellH := m.cellW, m.cellH
+	if cellW <= 0 || cellH <= 0 {
+		cellW, cellH = 1, 2
+	}
+	rows := (logoCols*cellW + cellH/2) / cellH
+	return max(rows, 4)
+}
+
 // drawImage keeps the picture where the last frame said it should be. It is
 // written outside the frame: Bubble Tea paints cells, and an escape sequence
 // inside a cell is not something it passes through.
@@ -452,7 +472,7 @@ func (m *Model) drawImage() tea.Cmd {
 	// Repainting the cells rubs the picture out, so it is placed again every
 	// few frames; the escape is small enough that this costs nothing.
 	if !m.imageOnScreen || m.frame%8 == 0 {
-		out += placeLogoAt(m.imageRow, m.imageCol, logoCols, logoRows)
+		out += placeLogoAt(m.imageRow, m.imageCol, logoCols, m.logoRows())
 		m.imageOnScreen = true
 	}
 	if out == "" {
