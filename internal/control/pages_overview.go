@@ -44,7 +44,7 @@ func (p *overviewPage) Update(m *Model, msg tea.Msg) tea.Cmd {
 		facts.Orphans, facts.Updates = p.info.Orphans, p.info.Updates
 		facts.Flatpaks, facts.FlatpakUpdates = p.info.Flatpaks, p.info.FlatpakUpdates
 		facts.Services, facts.CacheSize = p.info.Services, p.info.CacheSize
-		facts.CacheBytes, facts.Counted = p.info.CacheBytes, p.info.Counted
+		facts.CacheBytes, facts.Stale, facts.Counted = p.info.CacheBytes, p.info.Stale, p.info.Counted
 		p.info, p.loaded = facts, true
 		m.Status(facts.Hostname + " · " + facts.Kernel + " · up " + facts.Uptime)
 	case overviewCountsMsg:
@@ -66,6 +66,10 @@ func (p *overviewPage) attention(m *Model) []string {
 	}
 	if o.FlatpakUpdates > 0 {
 		items = append(items, plural(o.FlatpakUpdates, "Flatpak update", "Flatpak updates")+" waiting — press 3")
+	}
+	if len(o.Stale) > 0 {
+		items = append(items, plural(len(o.Stale), "old kernel", "old kernels")+" still in /boot — press "+
+			itoa(m.sectionNumber("Kernels")))
 	}
 	if o.Orphans > 0 {
 		items = append(items, plural(o.Orphans, "orphaned package", "orphaned packages")+
@@ -141,3 +145,14 @@ func (p *overviewPage) View(m *Model, width, height int) string {
 }
 
 func (p *overviewPage) Help(m *Model) []Binding { return nil }
+
+// sectionNumber is what to press to reach a section, since the snapshots page
+// is only there on a machine that can take snapshots.
+func (m *Model) sectionNumber(label string) int {
+	for i, page := range m.pages {
+		if page.Label() == label {
+			return i + 1
+		}
+	}
+	return 0
+}

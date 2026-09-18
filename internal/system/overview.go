@@ -31,7 +31,8 @@ type Overview struct {
 	CacheSize      string
 	CacheBytes     int64
 	Services       int
-	Counted        bool // the counts above have been read
+	Stale          []string // kernels left in /boot that nothing needs
+	Counted        bool     // the counts above have been read
 }
 
 // MachineFacts is everything that can be read straight from the kernel, with
@@ -88,6 +89,7 @@ func (c *Client) Counts(ctx context.Context) Overview {
 			}
 		}
 	}
+	o.Stale, _ = c.StaleKernels(ctx)
 	o.Counted = true
 	return o
 }

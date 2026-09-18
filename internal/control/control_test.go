@@ -99,6 +99,28 @@ func TestOverviewIsWhereItOpens(t *testing.T) {
 	}
 }
 
+func TestKernelsSeparatesInstalledFromLeftovers(t *testing.T) {
+	m := newTestModel(t)
+	onPage(t, m, "Kernels")
+	out := view(m)
+	if !strings.Contains(out, "linux6.18") || !strings.Contains(out, "linux6.12") {
+		t.Errorf("installed series missing:\n%s", out)
+	}
+	drive(t, m, key("right")) // installed -> in /boot
+	out = view(m)
+	if !strings.Contains(out, "6.18.50_1") {
+		t.Errorf("leftover trees missing:\n%s", out)
+	}
+	// The running kernel must never be offered for removal.
+	drive(t, m, key("left"))
+	page := m.pages[m.cur].(*kernelsPage)
+	for _, k := range page.kernels {
+		if k.Booted && k.Package != "linux6.18" {
+			t.Errorf("booted kernel read as %+v", k)
+		}
+	}
+}
+
 func TestPackagesListsWhatIsInstalled(t *testing.T) {
 	m := newTestModel(t)
 	onPage(t, m, "Packages")

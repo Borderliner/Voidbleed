@@ -118,10 +118,9 @@ func New(opts Options) *Model {
 		newPackagesPage(),
 		newFlatpakPage(),
 		newServicesPage(),
-		newFirmwarePage(),
-		newAppearancePage(),
-		newFirewallPage(),
+		newKernelsPage(),
 	}
+	m.pages = append(m.pages, newFirmwarePage(), newAppearancePage(), newFirewallPage())
 	return m
 }
 

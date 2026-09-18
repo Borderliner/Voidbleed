@@ -24,10 +24,16 @@ ii ghostty-1.2.3_1                        Terminal emulator
 ii niri-26.04_1                           Scrollable-tiling Wayland compositor
 ii noctalia-5.2.0_1                       Desktop shell
 ii linux6.18-6.18.52_1                    Linux kernel
+ii linux6.18-headers-6.18.52_1            Linux kernel headers
+ii linux6.12-6.12.109_1                   Linux kernel
 ii dejavu-fonts-ttf-2.37_3                Font family
 `, nil
 	case strings.Contains(line, "xbps-query -m"):
 		return "btop-1.4.7_1\nghostty-1.2.3_1\nniri-26.04_1\nnoctalia-5.2.0_1\n", nil
+	case strings.Contains(line, "xbps-query -x voidbleed-base"):
+		return "base-system>=0\nlinux6.18>=0\nlinux-base>=0\n", nil
+	case strings.Contains(line, "vkpurge list"):
+		return "6.12.11_1\n6.18.50_1\n", nil
 	case strings.Contains(line, "xbps-query -O"):
 		return "dejavu-fonts-ttf-2.37_3\n", nil
 	case strings.Contains(line, "xbps-install -un") || strings.Contains(line, "xbps-install -Mun"):
