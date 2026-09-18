@@ -1,0 +1,5 @@
+# Thunar's "Open Terminal Here" runs `exo-open --launch TerminalEmulator`.
+# Without xfce4-settings installed, exo falls back to this file and runs the
+# named program in the folder; with nothing set it looks for xfce4-terminal,
+# which Voidbleed does not ship, and the menu entry appears to do nothing.
+TerminalEmulator=ghostty

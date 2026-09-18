@@ -119,6 +119,7 @@ check "greeter sync polkit rule"               grep -q 'org.noctalia.greeter.app
 # these defaults the skeleton's settings.ini is ignored and apps look stock.
 check "GSettings theme defaults shipped"       grep -q "^icon-theme='Reversal-red-dark'$" "$t/usr/share/glib-2.0/schemas/99-voidbleed.gschema.override"
 check "GSettings cursor default shipped"       grep -q "^cursor-theme='Vanilla-DMZ'$" "$t/usr/share/glib-2.0/schemas/99-voidbleed.gschema.override"
+check "Thunar opens Ghostty as its terminal"   grep -q '^TerminalEmulator=ghostty$' "$t/etc/skel/.config/xfce4/helpers.rc"
 check "Reversal icon theme installed"          test -f "$t/usr/share/icons/Reversal-red-dark/index.theme"
 check "white DMZ cursor installed"             test -d "$t/usr/share/icons/Vanilla-DMZ/cursors"
 check "PipeWire links present"                 test -L "$t/etc/pipewire/pipewire.conf.d/20-pipewire-pulse.conf"
