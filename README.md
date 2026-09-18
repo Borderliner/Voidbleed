@@ -180,7 +180,7 @@ the ISO, the installed system and the tests cannot drift apart.
 | `packages/srcpkgs/` | xbps-src templates for the `voidbleed-*` packages |
 | `packages/fallback/` | Unbuilt templates, in case the voiders repo disappears |
 | `iso/` | Live ISO: package groups, live-only files, postsetup hook |
-| `cmd/`, `internal/` | The two Go programs — installer and control centre — and the engine, system and theme packages they share |
+| `cmd/`, `internal/` | The installer: engine, hardware detection, catalog, TUI and the theme it shares with the control centre |
 | `scripts/` | Catalog checks, package and ISO builds, repo tests, QEMU harnesses |
 | `docs/` | Branding and per-phase notes |
 
