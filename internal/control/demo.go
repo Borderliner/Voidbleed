@@ -69,6 +69,14 @@ ii cups-2.4.15_1                          Common Unix Printing System
 		return `niri-26.05_1 update x86_64 https://repo-de.voidlinux.org/current 9437184 3145728
 noctalia-5.3.0_1 update x86_64 https://repo.voiders.dev 4194304 1048576
 `, nil
+	case strings.Contains(line, "xbps-query -Rs linux"):
+		return `[-] linux6.6-6.6.156_1 Linux kernel and modules (6.6 series)
+[-] linux6.6-headers-6.6.156_1 Linux kernel and modules (6.6 series) - source headers
+[-] linux6.12-6.12.109_1 Linux kernel and modules (6.12 series)
+[*] linux6.18-6.18.52_1 Linux kernel and modules (6.18 series)
+[*] linux6.18-headers-6.18.52_1 Linux kernel and modules (6.18 series) - source headers
+[-] linux-firmware-20260101_1 Binary firmware blobs
+`, nil
 	case strings.Contains(line, "xbps-query -Rs"):
 		return `[*] btop-1.4.7_1 Monitor of resources
 [-] htop-3.4.1_1 Interactive process viewer

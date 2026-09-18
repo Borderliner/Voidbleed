@@ -163,3 +163,28 @@ func TestKeepIsAFlagNotAnInstall(t *testing.T) {
 		t.Errorf("the other direction runs %q", MarkAutoCmd("x").String())
 	}
 }
+
+// Kernel series are numbers: 6.6 is older than 6.18, which sorting them as
+// words gets backwards.
+func TestKernelSeriesSortAsNumbers(t *testing.T) {
+	kernels := []Kernel{{Series: "6.6"}, {Series: "6.18"}, {Series: "5.15"}, {Series: "6.1"}}
+	sortKernels(kernels)
+	var got []string
+	for _, k := range kernels {
+		got = append(got, k.Series)
+	}
+	want := []string{"6.18", "6.6", "6.1", "5.15"}
+	if strings.Join(got, ",") != strings.Join(want, ",") {
+		t.Errorf("sorted %v, want %v", got, want)
+	}
+}
+
+func TestKernelInstallTakesHeadersWhenAsked(t *testing.T) {
+	k := Kernel{Package: "linux6.6"}
+	if got := KernelInstallCmd(k, false).String(); got != "xbps-install -Sy linux6.6" {
+		t.Errorf("install runs %q", got)
+	}
+	if got := KernelInstallCmd(k, true).String(); got != "xbps-install -Sy linux6.6 linux6.6-headers" {
+		t.Errorf("install with headers runs %q", got)
+	}
+}

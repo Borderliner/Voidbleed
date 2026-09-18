@@ -4,6 +4,7 @@ import (
 	"context"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 
 	"voidbleed/internal/sys"
@@ -11,12 +12,14 @@ import (
 
 // Kernel is one installed kernel series.
 type Kernel struct {
-	Package string // linux6.18
-	Version string // 6.18.52_1
-	Series  string // 6.18
-	Booted  bool
-	Headers bool // the matching -headers package is installed, which dkms needs
-	Pinned  bool // the series Voidbleed installs by default
+	Package   string // linux6.18
+	Version   string // 6.18.52_1
+	Series    string // 6.18
+	Booted    bool
+	Headers   bool // the matching -headers package is installed, which dkms needs
+	Pinned    bool // the series Voidbleed installs by default
+	Installed bool // only meaningful in the list of what the repositories have
+	About     string
 }
 
 // kernelPackage matches linux6.18 and linux6.18-headers, but not linux-base,
@@ -62,9 +65,73 @@ func (c *Client) Kernels(ctx context.Context) ([]Kernel, error) {
 	for _, k := range byName {
 		kernels = append(kernels, *k)
 	}
-	// Newest series first: that is the one people care about.
-	sort.Slice(kernels, func(i, j int) bool { return kernels[i].Series > kernels[j].Series })
+	sortKernels(kernels)
 	return kernels, nil
+}
+
+// AvailableKernels is every kernel series the repositories carry. Voidbleed
+// ignores Void's "linux" metapackage, so installing a series by name is how a
+// machine gets another one -- and they live side by side, with the bootloader
+// offering each.
+func (c *Client) AvailableKernels(ctx context.Context) ([]Kernel, error) {
+	out, err := c.output(ctx, "xbps-query", "-Rs", "linux")
+	if err != nil && strings.TrimSpace(out) == "" {
+		return nil, err
+	}
+	byName := map[string]*Kernel{}
+	for _, line := range lines(out) {
+		fields := strings.Fields(line)
+		if len(fields) < 2 {
+			continue
+		}
+		name, version := splitPkgver(fields[1])
+		match := kernelPackage.FindStringSubmatch(name)
+		if match == nil {
+			continue
+		}
+		series, headers := match[1], match[2] != ""
+		k := byName["linux"+series]
+		if k == nil {
+			k = &Kernel{Package: "linux" + series, Series: series}
+			byName[k.Package] = k
+		}
+		if headers {
+			k.Headers = true // the repositories have headers for it
+			continue
+		}
+		k.Version, k.Installed = version, fields[0] == "[*]"
+		k.About = strings.TrimSpace(strings.TrimPrefix(line, fields[0]+" "+fields[1]))
+	}
+	kernels := make([]Kernel, 0, len(byName))
+	for _, k := range byName {
+		kernels = append(kernels, *k)
+	}
+	sortKernels(kernels)
+	return kernels, nil
+}
+
+// sortKernels puts the newest series first. The versions are numbers, not
+// words: 6.6 comes before 6.18, which sorting as text gets backwards.
+func sortKernels(kernels []Kernel) {
+	sort.Slice(kernels, func(i, j int) bool {
+		return seriesNewer(kernels[i].Series, kernels[j].Series)
+	})
+}
+
+func seriesNewer(a, b string) bool {
+	amaj, amin := splitSeries(a)
+	bmaj, bmin := splitSeries(b)
+	if amaj != bmaj {
+		return amaj > bmaj
+	}
+	return amin > bmin
+}
+
+func splitSeries(s string) (major, minor int) {
+	head, tail, _ := strings.Cut(s, ".")
+	major, _ = strconv.Atoi(head)
+	minor, _ = strconv.Atoi(tail)
+	return major, minor
 }
 
 // pinnedKernel is the series Voidbleed installs. The xbps rule only says which
@@ -101,6 +168,17 @@ func (c *Client) StaleKernels(ctx context.Context) ([]string, error) {
 		return nil, err
 	}
 	return lines(out), nil
+}
+
+// KernelInstallCmd installs a series. Headers come with it when the machine
+// builds modules against the ones it already has: a dkms driver on a kernel
+// with no headers is a driver that will not build.
+func KernelInstallCmd(k Kernel, withHeaders bool) sys.Cmd {
+	args := []string{"-Sy", k.Package}
+	if withHeaders {
+		args = append(args, k.Package+"-headers")
+	}
+	return sys.Command("xbps-install", args...)
 }
 
 // KernelRemoveCmd removes a whole series, headers included.
