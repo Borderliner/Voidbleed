@@ -164,7 +164,8 @@ write /mnt/voidbleed/etc/default/grub (0644)
       | GRUB_DEFAULT=0
       | GRUB_TIMEOUT=5
       | GRUB_DISTRIBUTOR="Voidbleed"
-      | GRUB_CMDLINE_LINUX_DEFAULT="loglevel=4 nvidia_drm.modeset=1"
+      | GRUB_CMDLINE_LINUX_DEFAULT="loglevel=4 quiet splash nvidia_drm.modeset=1"
+      | GRUB_GFXPAYLOAD_LINUX="keep"
 run   chroot /mnt/voidbleed grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=Voidbleed --recheck
 run   chroot /mnt/voidbleed grub-install --target=x86_64-efi --efi-directory=/boot --removable --recheck
 run   chroot /mnt/voidbleed xbps-reconfigure -f linux6.18

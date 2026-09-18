@@ -634,6 +634,9 @@ func bootloader(ctx context.Context, x *Exec) error {
 	grub, _ := x.R.ReadFile(p.T("etc/default/grub"))
 	updated := setShellVars(string(grub), [][2]string{
 		{"GRUB_DISTRIBUTOR", "Voidbleed"},
+		// Keep the firmware framebuffer the kernel inherits, so the splash
+		// starts drawing at once instead of after a mode switch.
+		{"GRUB_GFXPAYLOAD_LINUX", "keep"},
 		{"GRUB_CMDLINE_LINUX_DEFAULT", p.grubCmdline(x.luksUUID)},
 	})
 	if err := x.R.WriteFile(p.T("etc/default/grub"), []byte(updated), 0o644); err != nil {

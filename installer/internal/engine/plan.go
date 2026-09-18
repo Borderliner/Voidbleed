@@ -168,7 +168,9 @@ func NewPlan(cfg config.Config, facts hw.Facts, cat *catalog.Catalog, paths Path
 	}
 	add(&p.ManagedServices, "zramen", "dhcpcd", "wpa_supplicant")
 
-	add(&p.Cmdline, "loglevel=4")
+	// "splash" is what tells the rest of the system a boot splash is
+	// wanted; plymouth itself starts from the initramfs either way.
+	add(&p.Cmdline, "loglevel=4", "quiet", "splash")
 	add(&p.Cmdline, p.Selection.Cmdline...)
 	return p, nil
 }
