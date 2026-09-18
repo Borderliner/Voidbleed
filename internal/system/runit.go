@@ -122,8 +122,13 @@ func EnableCmd(name string) sys.Cmd {
 	return sys.Command("ln", "-sfn", filepath.Join(ServiceDir, name), filepath.Join(EnabledDir, name))
 }
 
+// DisableCmd stops the service and then unlinks it -- in that order. Removing
+// the link first takes the service directory away with it, and `sv down` then
+// has nothing left to talk to. Stopping something already stopped is not an
+// error worth failing the action for.
 func DisableCmd(name string) sys.Cmd {
-	return sys.Command("rm", "-f", filepath.Join(EnabledDir, name))
+	return sys.Shell("sv down " + filepath.Join(LiveDir, name) + " >/dev/null 2>&1 || true; " +
+		"rm -f " + filepath.Join(EnabledDir, name))
 }
 
 func ServiceCmd(action, name string) sys.Cmd {

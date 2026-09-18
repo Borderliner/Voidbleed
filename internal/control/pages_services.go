@@ -92,8 +92,8 @@ func (p *servicesPage) key(m *Model, key string) tea.Cmd {
 		}
 		if p.enabled(row.ID) {
 			return m.Do("disable "+row.ID,
-				row.ID+" will not start at the next boot. Stop it now as well?",
-				true, system.DisableCmd(row.ID), system.ServiceCmd("down", row.ID))
+				"Stop "+row.ID+" now and keep it from starting at the next boot?",
+				true, system.DisableCmd(row.ID))
 		}
 		return m.Do("enable "+row.ID, "", true, system.EnableCmd(row.ID))
 	case "s":
