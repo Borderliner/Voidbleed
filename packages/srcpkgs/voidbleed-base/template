@@ -1,7 +1,7 @@
 # Template file for 'voidbleed-base'
 pkgname=voidbleed-base
 version=20260916
-revision=3
+revision=4
 metapackage=yes
 short_desc="Voidbleed base system meta package"
 maintainer="@MAINTAINER@"
@@ -20,6 +20,7 @@ depends="
  sudo
  vpm
  plymouth
+ voidbleed-plymouth-theme
  NetworkManager
  chrony
  dbus

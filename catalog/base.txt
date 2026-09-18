@@ -15,8 +15,9 @@ cryptsetup
 sudo
 vpm
 
-# boot splash; the theme and its dracut drop-in live in overlays/system
+# boot splash; the theme ships separately so any Void machine can install it
 plymouth
+voidbleed-plymouth-theme
 
 # services
 NetworkManager

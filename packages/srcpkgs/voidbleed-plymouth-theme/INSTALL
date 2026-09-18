@@ -1,0 +1,33 @@
+# Select the splash. plymouthd.conf belongs to the plymouth package, and the
+# theme has to be named there before dracut runs: the initramfs only carries
+# the theme plymouthd.conf points at. Done once, so an administrator who later
+# picks another theme keeps it.
+case "${ACTION}" in
+post)
+	if [ -f etc/plymouth/plymouthd.conf ] &&
+		[ ! -e etc/plymouth/plymouthd.conf.voidbleed-backup ] &&
+		! grep -qs voidbleed etc/plymouth/plymouthd.conf; then
+		cp -p etc/plymouth/plymouthd.conf etc/plymouth/plymouthd.conf.voidbleed-backup
+		cat >etc/plymouth/plymouthd.conf <<-CONF
+			# Written by voidbleed-plymouth-theme; the previous file is kept
+			# as plymouthd.conf.voidbleed-backup.
+			[Daemon]
+			Theme=voidbleed
+			ShowDelay=0
+		CONF
+	fi
+	cat <<-'NOTE'
+
+	The splash needs two more things, which only an administrator should do:
+
+	  1. "splash" on the kernel command line. For GRUB, add it to
+	     GRUB_CMDLINE_LINUX_DEFAULT in /etc/default/grub (GRUB_GFXPAYLOAD_LINUX=keep
+	     helps it start sooner), then: grub-mkconfig -o /boot/grub/grub.cfg
+	  2. An initramfs that carries plymouth: xbps-reconfigure -f linux<version>
+
+	Nothing quits the splash on runit, so whatever starts your session should:
+	put "plymouth quit --retain-splash" before it.
+
+	NOTE
+	;;
+esac

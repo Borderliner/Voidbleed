@@ -60,7 +60,7 @@ echo "install config packages into a scratch root"
 # The icon theme is large; install it too so its files are checked.
 if xi -y bash coreutils grep sed findutils shadow \
         voidbleed-config voidbleed-desktop-config reversal-red-icon-theme xcursor-vanilla-dmz \
-        plymouth >"$tmp/install.txt" 2>&1; then
+        plymouth voidbleed-plymouth-theme >"$tmp/install.txt" 2>&1; then
     pass "transaction completed"
 else
     fail "transaction completed"; tail -20 "$tmp/install.txt"
@@ -113,7 +113,7 @@ check "plymouth lands in the initramfs"        grep -q 'add_dracutmodules+=" ply
 # one is a blank spot on a screen nobody can debug from.
 while read -r image; do
     check "splash image $image installed"      test -s "$t/usr/share/plymouth/themes/voidbleed/$image"
-done < <(grep -o 'Image("[^"]*")' "$root/overlays/system/usr/share/plymouth/themes/voidbleed/voidbleed.script" |
+done < <(grep -o 'Image("[^"]*")' "$root/overlays/plymouth/usr/share/plymouth/themes/voidbleed/voidbleed.script" |
     sed 's/Image("//; s/")//' | sort -u)
 check "greeter sync polkit rule"               grep -q 'org.noctalia.greeter.apply-appearance' "$t/usr/share/polkit-1/rules.d/49-noctalia-greeter-sync.rules"
 # GTK reads its appearance through the portal, which reads GSettings: without

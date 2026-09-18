@@ -1,0 +1,10 @@
+# Put back whatever theme was selected before, so removing this package does
+# not leave plymouth pointing at a theme that is no longer there.
+case "${ACTION}" in
+post)
+	if [ -e etc/plymouth/plymouthd.conf.voidbleed-backup ] &&
+		grep -qs '^Theme=voidbleed$' etc/plymouth/plymouthd.conf; then
+		mv etc/plymouth/plymouthd.conf.voidbleed-backup etc/plymouth/plymouthd.conf
+	fi
+	;;
+esac

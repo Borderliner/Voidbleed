@@ -10,21 +10,5 @@ post)
 		sed -i 's|^SHELL=/bin/bash$|SHELL=/usr/bin/fish|' etc/default/useradd
 	fi
 
-	# Select the Voidbleed splash. plymouthd.conf belongs to the plymouth
-	# package, and the theme has to be named there before dracut runs: the
-	# initramfs only carries the theme plymouthd.conf points at. Done once,
-	# so an administrator who later picks another theme keeps it.
-	if [ -f etc/plymouth/plymouthd.conf ] &&
-		[ ! -e etc/plymouth/plymouthd.conf.voidbleed-backup ] &&
-		! grep -qs voidbleed etc/plymouth/plymouthd.conf; then
-		cp -p etc/plymouth/plymouthd.conf etc/plymouth/plymouthd.conf.voidbleed-backup
-		cat >etc/plymouth/plymouthd.conf <<-EOF
-			# Written by voidbleed-config; the previous file is kept as
-			# plymouthd.conf.voidbleed-backup.
-			[Daemon]
-			Theme=voidbleed
-			ShowDelay=0
-		EOF
-	fi
 	;;
 esac

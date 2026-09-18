@@ -1,0 +1,15 @@
+# Template file for 'voidbleed-plymouth-theme'
+# files/overlay is staged from overlays/plymouth by scripts/build-packages.sh.
+pkgname=voidbleed-plymouth-theme
+version=20260918
+revision=1
+depends="plymouth"
+short_desc="Voidbleed boot splash for Plymouth"
+maintainer="@MAINTAINER@"
+license="MIT"
+homepage="https://github.com/Borderliner/Voidbleed"
+
+do_install() {
+	vlicense "${FILESDIR}/LICENSE"
+	vcopy "${FILESDIR}/overlay/*" /
+}

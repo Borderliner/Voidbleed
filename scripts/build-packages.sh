@@ -78,6 +78,7 @@ stage() {
             ;;
         voidbleed-desktop-config) cp -a "$root/overlays/desktop" "$dest/files/overlay" ;;
         voidbleed-nvidia-config)  cp -a "$root/overlays/nvidia" "$dest/files/overlay" ;;
+        voidbleed-plymouth-theme) cp -a "$root/overlays/plymouth" "$dest/files/overlay" ;;
         reversal-red-icon-theme)
             cp -a "$root/packages/assets/Reversal-red.tar.xz" "$dest/files/"
             ;;
