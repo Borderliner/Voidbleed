@@ -194,6 +194,11 @@ def main():
     ap.add_argument("--live-script", help="with --reuse: boot the ISO with the kept disk attached, run this "
                     "shell script as root in the live system, then power off")
     ap.add_argument("--wait", type=int, default=45, help="seconds to wait after logging in")
+    ap.add_argument("--shot-every", type=int, default=0, metavar="SECONDS",
+                    help="with --live-script: screenshot the live VM this often while the "
+                         "script runs, for things that are only visible mid-run (the boot splash)")
+    ap.add_argument("--shot-key", default="", help="key to send after each --shot-every screenshot, "
+                    "e.g. a keystroke for a password prompt to echo")
     ap.add_argument("--keys", default="", help="comma-separated keys to send after logging in "
                     "(a repaint helps QEMU refresh the screen after the greeter hands over)")
     ap.add_argument("--iso")
@@ -243,7 +248,7 @@ def main():
     live_groups = os.path.join(ROOT, "iso", "live-groups.txt")
     if os.path.exists(live_groups):
         files["live-groups.txt"] = open(live_groups, "rb").read()
-    if not args.reuse:
+    if not args.reuse and args.config:
         files["voidbleed-installer"] = open(args.installer, "rb").read()
         files["install.toml"] = open(args.config, "rb").read()
     server = Server(files, args.out, args.port)
@@ -310,12 +315,32 @@ def run_live(args, workdir, base):
         time.sleep(6)
         vm.type(f"curl -fsS {base}/run.sh | sh\n")
         log("live script running")
-        if not vm.wait_exit(args.install_timeout):
+        if args.shot_every:
+            if not watch_live(vm, args):
+                raise SystemExit("live script did not finish in time")
+        elif not vm.wait_exit(args.install_timeout):
             vm.shot(os.path.join(args.out, "2-live-timeout.png"))
             raise SystemExit("live script did not finish in time")
         log("live VM powered off")
     finally:
         vm.stop()
+
+
+def watch_live(vm, args):
+    """Screenshot the live VM while its script runs; True if it powered off."""
+    deadline = time.time() + args.install_timeout
+    shot = 0
+    while time.time() < deadline:
+        if vm.wait_exit(args.shot_every):
+            return True
+        shot += 1
+        vm.shot(os.path.join(args.out, f"live-{shot:02d}.png"))
+        if args.shot_key and vm.proc.poll() is None:
+            try:
+                vm.key(args.shot_key)
+            except OSError:  # powered off while the screenshot was taken
+                return True
+    return False
 
 
 def boot_installed(args, workdir, base):
