@@ -85,6 +85,11 @@ stage() {
                 -o "$dest/files/voidbleed-installer" ./cmd/voidbleed-installer)
             cp -a "$root/catalog" "$dest/files/catalog"
             ;;
+        voidbleed-control)
+            log "building the control centre binary"
+            (cd "$root" && CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" \
+                -o "$dest/files/voidbleed-control" ./cmd/voidbleed-control)
+            ;;
     esac
     grep -rlZ -e '@REPO_URL@' -e '@HOMEPAGE@' -e '@MAINTAINER@' "$dest" 2>/dev/null \
         | xargs -0 -r sed -i \

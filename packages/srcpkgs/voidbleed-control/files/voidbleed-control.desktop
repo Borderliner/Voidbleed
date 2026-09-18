@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Voidbleed Control
+GenericName=System settings
+Comment=Packages, Flatpaks, services, firmware, appearance and the firewall
+Icon=voidbleed-logo
+Exec=ghostty --title="Voidbleed control" -e voidbleed-control
+Terminal=false
+Categories=System;Settings;
+Keywords=packages;services;firewall;appearance;update;xbps;flatpak;

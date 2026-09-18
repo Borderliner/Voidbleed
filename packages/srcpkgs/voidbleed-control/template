@@ -1,0 +1,20 @@
+# Template file for 'voidbleed-control'
+# files/ is staged by scripts/build-packages.sh: the statically linked control
+# centre built from cmd/voidbleed-control, and its desktop entry.
+pkgname=voidbleed-control
+version=20260918
+revision=1
+# Only what it cannot work without. flatpak, fwupd and ufw are each optional:
+# the matching page says how to install them when they are missing.
+depends="xbps sudo runit"
+short_desc="Voidbleed control centre: packages, services, appearance, firewall"
+maintainer="@MAINTAINER@"
+license="MIT"
+homepage="@HOMEPAGE@"
+nostrip=yes
+
+do_install() {
+	vlicense "${FILESDIR}/LICENSE"
+	vbin "${FILESDIR}/voidbleed-control"
+	vinstall "${FILESDIR}/voidbleed-control.desktop" 644 usr/share/applications
+}

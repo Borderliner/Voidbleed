@@ -82,6 +82,11 @@ type Runner interface {
 // line; it must be safe to call from multiple goroutines.
 type Real struct {
 	Log func(line string)
+	// Env replaces the command environment. Empty means the clean, predictable
+	// one below, which is what installing into a chroot needs; a program
+	// running inside someone's session passes os.Environ() instead, so D-Bus
+	// and HOME still point where the user expects.
+	Env []string
 }
 
 func (r Real) log(line string) {
@@ -98,6 +103,9 @@ func (r Real) command(ctx context.Context, cmd Cmd) *exec.Cmd {
 	c := exec.CommandContext(ctx, name, args...)
 	// A clean, predictable environment inside chroots and for xbps.
 	c.Env = []string{"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin", "LANG=C.UTF-8", "HOME=/root", "TERM=dumb"}
+	if r.Env != nil {
+		c.Env = r.Env
+	}
 	if cmd.Stdin != "" {
 		c.Stdin = strings.NewReader(cmd.Stdin)
 	}

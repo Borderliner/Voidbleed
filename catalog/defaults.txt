@@ -40,3 +40,6 @@ gthumb
 papers
 mpv
 lollypop
+
+# Voidbleed's own control centre
+voidbleed-control
