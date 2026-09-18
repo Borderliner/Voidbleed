@@ -25,12 +25,9 @@ type servicesLoadedMsg struct {
 }
 
 func newServicesPage() *servicesPage {
-	// The name alone says nothing: "socklog-unix" and "dbus" mean something
-	// only if you already know. What each one is goes next to it, and the
-	// state becomes the badge on the right.
 	return &servicesPage{table: Table{
-		Headers: []string{"service", "what it is", ""},
-		Widths:  []int{22, 0, 9},
+		Headers: []string{"service", "state", ""},
+		Widths:  []int{0, 12, 10},
 	}}
 }
 
@@ -134,19 +131,22 @@ func (p *servicesPage) fill() {
 		if p.onlyOn && !s.Enabled {
 			continue
 		}
-		state := "disabled"
+		state, badge := "disabled", ""
 		switch {
 		case s.Enabled && s.Running():
-			state = "running"
+			state, badge = "running", s.Since
 		case s.Enabled && s.State == "down":
-			state = "stopped"
+			state, badge = "stopped", s.Since
 		case s.Enabled:
 			state = "enabled"
 		}
+		if s.Down && !s.Enabled {
+			badge = "starts down"
+		}
 		rows = append(rows, Row{
 			ID:    s.Name,
-			Cols:  []string{s.Name, s.About, ""},
-			Badge: state,
+			Cols:  []string{s.Name, state, ""},
+			Badge: badge,
 			Mark:  s.Enabled,
 			Muted: !s.Enabled,
 		})

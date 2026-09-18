@@ -182,18 +182,63 @@ func TestKernelsSeparatesInstalledFromLeftovers(t *testing.T) {
 	if !strings.Contains(out, "linux6.18") || !strings.Contains(out, "linux6.12") {
 		t.Errorf("installed series missing:\n%s", out)
 	}
-	drive(t, m, key("right")) // installed -> in /boot
+	drive(t, m, key("right"), key("right")) // installed -> available -> in /boot
 	out = view(m)
 	if !strings.Contains(out, "6.18.50_1") {
 		t.Errorf("leftover trees missing:\n%s", out)
 	}
 	// The running kernel must never be offered for removal.
-	drive(t, m, key("left"))
+	drive(t, m, key("left"), key("left"))
 	page := m.pages[m.cur].(*kernelsPage)
 	for _, k := range page.kernels {
 		if k.Booted && k.Package != "linux6.18" {
 			t.Errorf("booted kernel read as %+v", k)
 		}
+	}
+}
+
+// A machine should be able to pick up another kernel series without leaving
+// the program, and without losing the one it is running.
+func TestKernelsCanInstallAnotherSeries(t *testing.T) {
+	m := newTestModel(t)
+	onPage(t, m, "Kernels")
+	drive(t, m, key("right")) // installed -> available
+	out := view(m)
+	if !strings.Contains(out, "linux6.6") {
+		t.Fatalf("the repositories' series are not listed:\n%s", out)
+	}
+	page := m.pages[m.cur].(*kernelsPage)
+	// Newest first, and read as numbers: 6.6 is older than 6.18.
+	if page.available[0].Series != "6.18" {
+		t.Errorf("series sorted as text: %v", page.available)
+	}
+
+	// Move to the one that is not installed and take it.
+	for {
+		row, ok := page.table.Current()
+		if !ok {
+			t.Fatal("no rows")
+		}
+		if row.ID == "linux6.6" {
+			break
+		}
+		drive(t, m, key("down"))
+	}
+	drive(t, m, key("enter"))
+	if m.over != overlayConfirm {
+		t.Fatalf("installing a kernel did not ask first, overlay = %v", m.over)
+	}
+	question := view(m)
+	if !strings.Contains(question, "alongside") {
+		t.Errorf("the question does not say the current kernel is kept:\n%s", question)
+	}
+	if !strings.Contains(question, "Headers") {
+		t.Errorf("a machine with headers installed should be told they come too:\n%s", question)
+	}
+	drive(t, m, key("enter"))
+	runner := m.Client.Run.(*demoRunner)
+	if !runner.ran("xbps-install -Sy linux6.6 linux6.6-headers") {
+		t.Errorf("the install did not run as expected; ran:\n%v", runner.seen)
 	}
 }
 
@@ -301,12 +346,11 @@ func TestAppearanceReadsAndEdits(t *testing.T) {
 func TestServicesSayWhatTheyAre(t *testing.T) {
 	m := newTestModel(t)
 	onPage(t, m, "Services")
+	// The list stays a list; what a service is belongs in the side pane,
+	// where there is room to say it.
 	out := view(m)
-	if !strings.Contains(out, "what it is") {
-		t.Errorf("no description column:\n%s", out)
-	}
-	if !strings.Contains(out, "Network Managemen") {
-		t.Errorf("the description of NetworkManager is missing:\n%s", out)
+	if !strings.Contains(out, "Network Management daemon") {
+		t.Errorf("the side pane does not say what the service is:\n%s", out)
 	}
 	page := m.pages[m.cur].(*servicesPage)
 	for _, s := range page.services {
