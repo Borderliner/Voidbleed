@@ -12,7 +12,11 @@ import (
 // The palette from docs/BRANDING.md. Lip Gloss downsamples for the Linux
 // console's 16 colours.
 var (
-	Primary   = lipgloss.Color("#e8313f")
+	Primary = lipgloss.Color("#e8313f")
+	// Blood is the logo's own red: no green, no blue. The accent above is a
+	// lighter, pinker red that reads better as interface colour, but next to
+	// the mark it looks like a different brand.
+	Blood     = lipgloss.Color("#e00000")
 	Secondary = lipgloss.Color("#ff8a85")
 	Tertiary  = lipgloss.Color("#f0a35e")
 	Warn      = lipgloss.Color("#ffc247")
@@ -76,6 +80,8 @@ type Styles struct {
 	Key, KeyDesc, Selected, Badge, BadgeWarn                     lipgloss.Style
 	Input, InputFocus, Label, LabelFocus, Danger, Section        lipgloss.Style
 	SidebarItem, SidebarActive, Header, Footer, Table, TableHead lipgloss.Style
+	// Brand is the mark and the wordmark, in the logo's own red.
+	Brand lipgloss.Style
 }
 
 func NewStyles(g GlyphSet) Styles {
@@ -118,6 +124,7 @@ func NewStyles(g GlyphSet) Styles {
 		Footer:        base.Foreground(Dim),
 		Table:         base,
 		TableHead:     base.Foreground(Dim).Bold(true),
+		Brand:         base.Foreground(Blood).Bold(true),
 	}
 }
 

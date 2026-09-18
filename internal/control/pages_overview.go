@@ -109,13 +109,13 @@ func (p *overviewPage) View(m *Model, width, height int) string {
 	head := ""
 	switch {
 	case width >= logoW && height >= logoH+bodyH+3:
-		mark := s.Accent.Render(logo)
+		mark := s.Brand.Render(logo)
 		if m.Graphics {
 			mark = logoBox(logoCols, logoRows)
 		}
-		head = center(width, mark) + "\n" + center(width, s.Accent.Render(wordmark)) + "\n\n"
+		head = center(width, mark) + "\n" + center(width, s.Brand.Render(wordmark)) + "\n\n"
 	case width >= lipgloss.Width(wordmark) && height >= bodyH+2:
-		head = center(width, s.Accent.Render(wordmark)) + "\n\n"
+		head = center(width, s.Brand.Render(wordmark)) + "\n\n"
 	}
 	return lipgloss.NewStyle().Width(width).Height(height).Render(head + body)
 }

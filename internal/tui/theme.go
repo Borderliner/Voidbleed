@@ -35,7 +35,7 @@ const labelWidth = theme.LabelWidth
 type styles struct {
 	app, card, title, subtitle, text, muted, dim, accent, secondary, warn, ok, fail lipgloss.Style
 	key, keyDesc, selected, badge, badgeWarn, input, inputFocus, label, labelFocus  lipgloss.Style
-	danger, section                                                                 lipgloss.Style
+	danger, section, brand                                                          lipgloss.Style
 }
 
 func newStyles(g glyphSet) styles {
@@ -48,14 +48,14 @@ func newStyles(g glyphSet) styles {
 		badge: s.Badge, badgeWarn: s.BadgeWarn,
 		input: s.Input, inputFocus: s.InputFocus,
 		label: s.Label, labelFocus: s.LabelFocus,
-		danger: s.Danger, section: s.Section,
+		danger: s.Danger, section: s.Section, brand: s.Brand,
 	}
 }
 
 func (m *Model) logo() string {
-	return m.st.styles.accent.Render(strings.TrimRight(theme.Logo(m.glyphs), "\n"))
+	return m.st.styles.brand.Render(strings.TrimRight(theme.Logo(m.glyphs), "\n"))
 }
 
 func (m *Model) wordmark() string {
-	return m.st.styles.accent.Render(theme.Wordmark(m.glyphs))
+	return m.st.styles.brand.Render(theme.Wordmark(m.glyphs))
 }
