@@ -28,7 +28,10 @@ type Service struct {
 	PID     string
 	Down    bool   // /etc/sv/<name>/down: supervised, but not started
 	Package string // what installed it
-	About   string // that package's description of itself
+	About   string // what it is, in a line
+	// Unowned marks a service definition no installed package claims: left
+	// behind when the package that brought it was removed.
+	Unowned bool
 }
 
 func (s Service) Running() bool { return s.State == "run" }
@@ -102,10 +105,49 @@ func (c *Client) describe(ctx context.Context, services []Service) []Service {
 		}
 	}
 	for i, s := range services {
-		services[i].Package = owners[s.Name]
-		services[i].About = about[owners[s.Name]]
+		pkg := owners[s.Name]
+		services[i].Package = pkg
+		services[i].Unowned = pkg == ""
+		// A package's own description is usually the best answer, but some
+		// packages ship a drawer full of services and describe the drawer:
+		// runit-void's fifteen are all "Void Linux runit scripts".
+		desc := about[pkg]
+		if pkg == "runit-void" || desc == "" {
+			if own := describeService(s.Name); own != "" {
+				desc = own
+			}
+		}
+		services[i].About = desc
 	}
 	return services
+}
+
+// describeService says what the services nobody else describes are. It stays
+// short on purpose: anything that a package describes properly is left to the
+// package, so this list cannot drift out of date with the repositories.
+func describeService(name string) string {
+	if device, ok := strings.CutPrefix(name, "agetty-"); ok {
+		switch device {
+		case "console":
+			return "Login prompt on the system console"
+		case "generic":
+			return "Login prompt on whichever console the kernel was given"
+		case "serial":
+			return "Login prompt on the serial port"
+		default:
+			if strings.HasPrefix(device, "tty") && len(device) > 3 && device[3] >= '0' && device[3] <= '9' {
+				return "Login prompt on virtual terminal " + device[3:]
+			}
+			return "Login prompt on " + device
+		}
+	}
+	switch name {
+	case "sulogin":
+		return "Single-user mode: asks for the root password before giving a shell"
+	case "runsvdir":
+		return "Starts and watches every enabled service"
+	}
+	return ""
 }
 
 // Status asks runit how each enabled service is doing. It needs root, so the

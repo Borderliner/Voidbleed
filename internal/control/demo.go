@@ -56,6 +56,7 @@ ii dejavu-fonts-ttf-2.37_3                Font family
 ii dbus-1.16.2_1                          Message bus system
 ii NetworkManager-1.56.0_1                Network Management daemon
 ii cups-2.4.15_1                          Common Unix Printing System
+ii runit-void-20260101_1                   Void Linux runit scripts
 `, nil
 	case strings.Contains(line, "xbps-query -m"):
 		return "btop-1.4.7_1\nghostty-1.2.3_1\nniri-26.04_1\nnoctalia-5.2.0_1\n", nil
@@ -106,6 +107,8 @@ noctalia-5.3.0_1 update x86_64 https://repo.voiders.dev 4194304 1048576
 		return `dbus-1.16.2_1: /etc/sv/dbus/run (regular file)
 NetworkManager-1.56.0_1: /etc/sv/NetworkManager/run (regular file)
 cups-2.4.15_1: /etc/sv/cupsd/run (regular file)
+runit-void-20260101_1: /etc/sv/agetty-tty1/run (regular file)
+runit-void-20260101_1: /etc/sv/sulogin/run (regular file)
 `, nil
 	case strings.Contains(line, "sv status"):
 		return `run: /var/service/dbus: (pid 1204) 84231s
