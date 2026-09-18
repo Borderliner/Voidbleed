@@ -61,7 +61,14 @@ func (p *firmwarePage) Update(m *Model, msg tea.Msg) tea.Cmd {
 				waiting++
 			}
 		}
-		m.Status(plural(len(p.devices), "device", "devices") + ", " + plural(waiting, "update", "updates") + " waiting")
+		// "0 updates" reads like a failure; say what it means instead.
+		if waiting == 0 {
+			m.Status(plural(len(p.devices), "device", "devices") +
+				", nothing waiting — press f to fetch current metadata from the LVFS first")
+		} else {
+			m.Status(plural(len(p.devices), "device", "devices") + ", " +
+				plural(waiting, "update", "updates") + " waiting")
+		}
 		return nil
 	case tea.KeyPressMsg:
 		return p.key(m, msg.String())
@@ -116,6 +123,11 @@ func (p *firmwarePage) device(id string) system.Device {
 func (p *firmwarePage) fill() {
 	rows := make([]Row, 0, len(p.devices))
 	for _, d := range p.devices {
+		// fwupd reports internal plumbing with no name at all; those rows tell
+		// a person nothing.
+		if d.Name == "" {
+			continue
+		}
 		badge := ""
 		switch {
 		case d.NewVer != "":
