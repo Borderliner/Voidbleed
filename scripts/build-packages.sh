@@ -62,6 +62,10 @@ stage() {
     rm -rf "$dest"
     cp -a "$root/packages/srcpkgs/$name" "$dest"
     mkdir -p "$dest/files"
+    # Voidbleed's own packages are MIT; ship the text with them.
+    case "$name" in
+        voidbleed-*) cp -a "$root/LICENSE" "$dest/files/LICENSE" ;;
+    esac
     case "$name" in
         voidbleed-config)
             mkdir -p "$dest/files/keys"

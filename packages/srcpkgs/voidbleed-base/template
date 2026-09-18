@@ -5,7 +5,7 @@ revision=3
 metapackage=yes
 short_desc="Voidbleed base system meta package"
 maintainer="@MAINTAINER@"
-license="Public Domain"
+license="MIT"
 homepage="@HOMEPAGE@"
 
 # BEGIN generated from catalog/base.txt by scripts/catalog.py sync-templates

@@ -7,10 +7,11 @@ revision=4
 depends="base-files shadow sudo fish-shell"
 short_desc="Voidbleed system configuration and branding"
 maintainer="@MAINTAINER@"
-license="Public Domain"
+license="MIT"
 homepage="@HOMEPAGE@"
 
 do_install() {
+	vlicense "${FILESDIR}/LICENSE"
 	vcopy "${FILESDIR}/overlay/*" /
 	chmod 0750 "${DESTDIR}/etc/sudoers.d"
 	chmod 0440 "${DESTDIR}/etc/sudoers.d/wheel"

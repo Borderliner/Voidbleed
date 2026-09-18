@@ -6,9 +6,10 @@ version=20260916
 revision=2
 short_desc="Voidbleed NVIDIA settings for niri (modeset, VRAM heap fix)"
 maintainer="@MAINTAINER@"
-license="Public Domain"
+license="MIT"
 homepage="@HOMEPAGE@"
 
 do_install() {
+	vlicense "${FILESDIR}/LICENSE"
 	vcopy "${FILESDIR}/overlay/*" /
 }

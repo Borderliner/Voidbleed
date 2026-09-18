@@ -7,11 +7,12 @@ revision=1
 depends="btrfs-progs cryptsetup curl dosfstools e2fsprogs tar util-linux xbps"
 short_desc="Voidbleed installer (TUI and unattended)"
 maintainer="@MAINTAINER@"
-license="Public Domain"
+license="MIT"
 homepage="@HOMEPAGE@"
 nostrip=yes
 
 do_install() {
+	vlicense "${FILESDIR}/LICENSE"
 	vbin "${FILESDIR}/voidbleed-installer"
 	vmkdir usr/share/voidbleed/catalog
 	vcopy "${FILESDIR}/catalog/*" usr/share/voidbleed/catalog

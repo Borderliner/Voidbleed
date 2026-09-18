@@ -6,11 +6,12 @@ revision=10
 depends="greetd noctalia-greeter polkit pipewire wireplumber alsa-pipewire"
 short_desc="Voidbleed desktop defaults for niri, Noctalia and Ghostty"
 maintainer="@MAINTAINER@"
-license="Public Domain"
+license="MIT"
 homepage="@HOMEPAGE@"
 # greetd creates the _greeter account; the greeter keeps synced appearance here.
 make_dirs="/var/lib/noctalia-greeter 0750 _greeter _greeter"
 
 do_install() {
+	vlicense "${FILESDIR}/LICENSE"
 	vcopy "${FILESDIR}/overlay/*" /
 }
