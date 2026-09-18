@@ -141,10 +141,20 @@ func uptime() string {
 func cpuModel() string {
 	for _, line := range strings.Split(readFile("/proc/cpuinfo"), "\n") {
 		if key, value, ok := strings.Cut(line, ":"); ok && strings.TrimSpace(key) == "model name" {
-			return strings.TrimSpace(value)
+			return tidyCPU(value)
 		}
 	}
 	return ""
+}
+
+// tidyCPU drops the noise vendors put in the model string, which is most of
+// it: "Intel(R) Xeon(R) E-2176M  CPU @ 2.70GHz" is a column and a half of
+// trademark symbols wrapped around a name and a number.
+func tidyCPU(model string) string {
+	for _, noise := range []string{"(R)", "(TM)", "(tm)", "CPU", "Processor", "@"} {
+		model = strings.ReplaceAll(model, noise, " ")
+	}
+	return strings.Join(strings.Fields(model), " ")
 }
 
 func memory() string {
@@ -168,7 +178,7 @@ func memory() string {
 	if total == 0 {
 		return ""
 	}
-	return humanBytes(total-available) + " of " + humanBytes(total) + " used"
+	return humanBytes(total-available) + " of " + humanBytes(total)
 }
 
 func diskUsage(path string) string {
@@ -183,7 +193,7 @@ func diskUsage(path string) string {
 	if total > 0 {
 		percent = int(used * 100 / total)
 	}
-	return fmt.Sprintf("%s of %s used (%d%%)", humanBytes(used), humanBytes(total), percent)
+	return fmt.Sprintf("%s of %s (%d%%)", humanBytes(used), humanBytes(total), percent)
 }
 
 // dirSize adds up a directory without following it anywhere else; the package

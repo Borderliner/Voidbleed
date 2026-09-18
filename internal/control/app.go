@@ -351,7 +351,9 @@ func (m *Model) render() string {
 
 	sidebarW := 0
 	if !m.compact() {
-		sidebarW = 20
+		// Wide enough for "Appearance" and its number, and no wider: every
+		// column here is one the page does not get.
+		sidebarW = 16
 	}
 	contentW := innerW - sidebarW
 

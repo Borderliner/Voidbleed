@@ -99,18 +99,27 @@ func TestOverviewIsWhereItOpens(t *testing.T) {
 	}
 }
 
-// The mark is the first thing the app shows; it must survive being resized,
-// changing shape rather than disappearing.
-func TestOverviewAlwaysShowsTheMark(t *testing.T) {
-	for _, size := range [][2]int{{80, 24}, {90, 26}, {100, 30}, {120, 40}, {160, 50}} {
+// The mark is the first thing the app shows. It changes shape as the terminal
+// shrinks -- ring above the wordmark, then wordmark alone -- and only gives up
+// when the facts themselves would not fit.
+func TestOverviewShowsTheMark(t *testing.T) {
+	for _, tc := range []struct {
+		w, h           int
+		logo, wordmark bool
+	}{
+		{140, 45, true, true},
+		{120, 40, true, true},
+		{100, 30, false, true},
+	} {
 		m := New(Options{Demo: true})
-		drive(t, m, tea.WindowSizeMsg{Width: size[0], Height: size[1]})
+		drive(t, m, tea.WindowSizeMsg{Width: tc.w, Height: tc.h})
 		runCmd(t, m, m.pages[m.cur].Load(m), 0)
 		out := view(m)
-		logo := strings.Contains(out, "▄▄████████▄")
-		wordmark := strings.Contains(out, "█▀█ █ █▀▄")
-		if !logo && !wordmark {
-			t.Errorf("%dx%d shows neither the mark nor the wordmark:\n%s", size[0], size[1], out)
+		if got := strings.Contains(out, "▄▄████████▄"); got != tc.logo {
+			t.Errorf("%dx%d: logo shown = %v, want %v\n%s", tc.w, tc.h, got, tc.logo, out)
+		}
+		if got := strings.Contains(out, "█▀█ █ █▀▄"); got != tc.wordmark {
+			t.Errorf("%dx%d: wordmark shown = %v, want %v", tc.w, tc.h, got, tc.wordmark)
 		}
 	}
 }

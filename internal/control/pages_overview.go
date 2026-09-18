@@ -62,23 +62,22 @@ func (p *overviewPage) attention(m *Model) []string {
 	o := p.info
 	var items []string
 	if o.Updates > 0 {
-		items = append(items, plural(o.Updates, "package update", "package updates")+" waiting — press 2")
+		items = append(items, plural(o.Updates, "package update", "package updates")+" — press 2")
 	}
 	if o.FlatpakUpdates > 0 {
-		items = append(items, plural(o.FlatpakUpdates, "Flatpak update", "Flatpak updates")+" waiting — press 3")
+		items = append(items, plural(o.FlatpakUpdates, "Flatpak update", "Flatpak updates")+" — press 3")
 	}
 	if len(o.Stale) > 0 {
-		items = append(items, plural(len(o.Stale), "old kernel", "old kernels")+" still in /boot — press "+
+		items = append(items, plural(len(o.Stale), "old kernel", "old kernels")+" in /boot — press "+
 			itoa(m.sectionNumber("Kernels")))
 	}
 	if o.Orphans > 0 {
-		items = append(items, plural(o.Orphans, "orphaned package", "orphaned packages")+
-			" nothing needs — press 2, then c")
+		items = append(items, plural(o.Orphans, "orphan", "orphans")+" — press 2")
 	}
 	// A gigabyte of downloaded packages nobody will install again is worth a
 	// mention; a few megabytes is not.
 	if o.CacheBytes > 1<<30 {
-		items = append(items, o.CacheSize+" of package cache — press 2, then c")
+		items = append(items, o.CacheSize+" of cache — press 2")
 	}
 	return items
 }
@@ -88,67 +87,92 @@ func (p *overviewPage) View(m *Model, width, height int) string {
 	if p.loading && !p.loaded {
 		return m.spinner() + s.Dim.Render(" reading the machine…")
 	}
-	o := p.info
+	body := p.body(m, width, height)
 
-	logo := s.Accent.Render(theme.Logo(m.Glyphs))
-	facts := []struct{ label, value string }{
+	// The mark sits above its name, the way it does on the wallpaper and the
+	// boot splash. On a short terminal the logo gives way to the wordmark,
+	// and on a very short one the facts have it all.
+	logo, wordmark := theme.Logo(m.Glyphs), theme.Wordmark(m.Glyphs)
+	bodyH := lipgloss.Height(body)
+	head := ""
+	switch {
+	case width >= lipgloss.Width(logo) && height >= lipgloss.Height(logo)+bodyH+3:
+		head = center(width, s.Accent.Render(logo)) + "\n" +
+			center(width, s.Accent.Render(wordmark)) + "\n\n"
+	case width >= lipgloss.Width(wordmark) && height >= bodyH+2:
+		head = center(width, s.Accent.Render(wordmark)) + "\n\n"
+	}
+	return lipgloss.NewStyle().Width(width).Height(height).Render(head + body)
+}
+
+// body is the machine on the left and its software on the right, or one under
+// the other when there is not width for two columns. It trims the attention
+// list to what the height allows.
+func (p *overviewPage) body(m *Model, width, height int) string {
+	for limit := 5; ; limit-- {
+		out := p.bodyWith(m, width, limit)
+		if limit == 1 || lipgloss.Height(out) <= height-2 {
+			return out
+		}
+	}
+}
+
+func (p *overviewPage) bodyWith(m *Model, width, limit int) string {
+	s := m.Styles
+	o := p.info
+	label := s.Muted.Width(9)
+
+	var machine strings.Builder
+	for _, f := range []struct{ label, value string }{
 		{"host", o.Hostname},
 		{"kernel", o.Kernel},
 		{"uptime", o.Uptime},
 		{"cpu", o.CPU},
 		{"memory", o.Memory},
-		{"disk", o.Disk + "  " + s.Dim.Render(o.Root)},
-	}
-	var body strings.Builder
-	for _, f := range facts {
+		{"disk", o.Disk},
+		{"root", o.Root},
+	} {
 		if strings.TrimSpace(f.value) == "" {
 			continue
 		}
-		body.WriteString(s.Label.Render(f.label) + s.Text.Render(f.value) + "\n")
+		machine.WriteString(label.Render(f.label) + s.Text.Render(f.value) + "\n")
 	}
 
-	body.WriteString("\n" + s.Section.Render("software") + "\n")
+	var software strings.Builder
 	if !o.Counted {
-		body.WriteString(s.Label.Render("packages") + m.spinner() + s.Dim.Render(" counting…") + "\n")
+		software.WriteString(label.Render("packages") + m.spinner() + s.Dim.Render(" counting…") + "\n")
 	} else {
-		body.WriteString(s.Label.Render("packages") + s.Text.Render(
-			plural(o.Packages, "package", "packages")+s.Dim.Render(", "+itoa(o.Manual)+" asked for by hand")) + "\n")
+		software.WriteString(label.Render("packages") + s.Text.Render(itoa(o.Packages)) +
+			s.Dim.Render(", "+itoa(o.Manual)+" asked for") + "\n")
 		if system.Have("flatpak") {
-			body.WriteString(s.Label.Render("flatpak") + s.Text.Render(plural(o.Flatpaks, "application", "applications")) + "\n")
+			software.WriteString(label.Render("flatpak") + s.Text.Render(itoa(o.Flatpaks)+" apps") + "\n")
 		}
-		body.WriteString(s.Label.Render("services") + s.Text.Render(plural(o.Services, "service", "services")+" enabled") + "\n")
+		software.WriteString(label.Render("services") + s.Text.Render(itoa(o.Services)+" enabled") + "\n")
 	}
-
 	if items := p.attention(m); len(items) > 0 {
-		body.WriteString("\n" + s.Section.Render("needs attention") + "\n")
-		for _, item := range items {
-			body.WriteString(s.Warn.Render(" "+m.Glyphs.Bullet+" ") + s.Text.Render(item) + "\n")
+		software.WriteString("\n" + s.Section.Render("needs attention") + "\n")
+		for i, item := range items {
+			if i == 4 && len(items) > 5 {
+				software.WriteString(s.Dim.Render("  and "+itoa(len(items)-i)+" more") + "\n")
+				break
+			}
+			software.WriteString(s.Warn.Render(m.Glyphs.Bullet+" ") + s.Text.Render(item) + "\n")
 		}
 	} else if o.Counted {
-		body.WriteString("\n" + s.OK.Render(m.Glyphs.Done+" nothing needs attention") + "\n")
+		software.WriteString("\n" + s.OK.Render(m.Glyphs.Done+" nothing needs attention") + "\n")
 	}
 
-	// Branding survives every size, it just changes shape: the mark beside
-	// the facts when there is room, the wordmark above them when there is
-	// not, and nothing at all on a terminal too small for either.
-	logo, wordmark := theme.Logo(m.Glyphs), theme.Wordmark(m.Glyphs)
-	logoW, wordW := lipgloss.Width(logo), lipgloss.Width(wordmark)
-	const factsNeed = 40 // below this the facts start wrapping badly
+	if width < 72 {
+		return machine.String() + "\n" + software.String()
+	}
+	half := width / 2
+	return lipgloss.JoinHorizontal(lipgloss.Top,
+		lipgloss.NewStyle().Width(half).Render(machine.String()),
+		lipgloss.NewStyle().Width(width-half).Render(software.String()))
+}
 
-	if width-(logoW+2) >= factsNeed {
-		art, artW := s.Accent.Render(logo), logoW+2
-		if width-(wordW+2) >= factsNeed && height >= lipgloss.Height(logo)+4 {
-			art, artW = art+"\n\n"+s.Accent.Render(wordmark), wordW+2
-		}
-		return lipgloss.JoinHorizontal(lipgloss.Top,
-			lipgloss.NewStyle().Width(artW).Height(height).Render(art),
-			lipgloss.NewStyle().Width(width-artW).Height(height).Render(body.String()))
-	}
-	if width >= wordW && height >= 14 {
-		head := lipgloss.PlaceHorizontal(width, lipgloss.Center, s.Accent.Render(wordmark))
-		return lipgloss.NewStyle().Width(width).Height(height).Render(head + "\n\n" + body.String())
-	}
-	return lipgloss.NewStyle().Width(width).Height(height).Render(body.String())
+func center(width int, text string) string {
+	return lipgloss.PlaceHorizontal(width, lipgloss.Center, text)
 }
 
 func (p *overviewPage) Help(m *Model) []Binding { return nil }
