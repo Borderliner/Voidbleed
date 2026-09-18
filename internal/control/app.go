@@ -120,6 +120,12 @@ func New(opts Options) *Model {
 		newServicesPage(),
 		newKernelsPage(),
 	}
+	// Snapshots are only offered on a machine that can take them: a btrfs
+	// root with the tools for it. Demo mode shows the page regardless, since
+	// it is pretending to be such a machine.
+	if opts.Demo || system.SnapshotsAvailable() {
+		m.pages = append(m.pages, newSnapshotsPage())
+	}
 	m.pages = append(m.pages, newFirmwarePage(), newAppearancePage(), newFirewallPage())
 	return m
 }

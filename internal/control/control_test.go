@@ -99,6 +99,21 @@ func TestOverviewIsWhereItOpens(t *testing.T) {
 	}
 }
 
+// A machine that cannot take snapshots is not shown a snapshots page.
+func TestSnapshotsOnlyWhereTheyWork(t *testing.T) {
+	m := New(Options{}) // this machine, not the demo one
+	shown := false
+	for _, page := range m.pages {
+		if page.Label() == "Snapshots" {
+			shown = true
+		}
+	}
+	if shown != system.SnapshotsAvailable() {
+		t.Errorf("snapshots page shown = %v, but this root is %q",
+			shown, system.RootFilesystem())
+	}
+}
+
 func TestKernelsSeparatesInstalledFromLeftovers(t *testing.T) {
 	m := newTestModel(t)
 	onPage(t, m, "Kernels")
