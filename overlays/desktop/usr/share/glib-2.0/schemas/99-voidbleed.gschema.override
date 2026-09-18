@@ -1,0 +1,11 @@
+# GTK under this desktop takes its appearance from the portal, which reads
+# GSettings -- so settings.ini alone leaves apps on GNOME's defaults. These
+# are the same values as the skeleton's gtk-3.0/gtk-4.0 settings.ini; a user
+# who changes one in their own dconf keeps it.
+[org.gnome.desktop.interface]
+gtk-theme='adw-gtk3-dark'
+icon-theme='Reversal-red-dark'
+cursor-theme='Vanilla-DMZ'
+cursor-size=24
+color-scheme='prefer-dark'
+font-name='Ubuntu 10'

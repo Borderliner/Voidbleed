@@ -13,12 +13,12 @@ environment {
     QT_QPA_PLATFORM "wayland"
     QT_QPA_PLATFORMTHEME "qt6ct"
     // Qt and X11 apps read the cursor from the environment.
-    XCURSOR_THEME "Vanilla-DMZ-AA"
+    XCURSOR_THEME "Vanilla-DMZ"
     XCURSOR_SIZE "24"
 }
 
 cursor {
-    xcursor-theme "Vanilla-DMZ-AA"
+    xcursor-theme "Vanilla-DMZ"
     xcursor-size 24
 
     hide-when-typing

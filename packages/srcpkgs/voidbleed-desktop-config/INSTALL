@@ -4,6 +4,12 @@ post)
 	# (xbps-src drops empty directories from packages, so create it here).
 	install -d -m 0755 etc/skel/.local/bin
 
+	# The GSettings defaults that GTK reads through the portal only take
+	# effect once the schemas are recompiled.
+	if [ -x usr/bin/glib-compile-schemas ]; then
+		usr/bin/glib-compile-schemas usr/share/glib-2.0/schemas >/dev/null 2>&1 || :
+	fi
+
 	# Point greetd at the Noctalia greeter, unless it already is.
 	if ! grep -qs voidbleed-greeter-session etc/greetd/config.toml; then
 		[ -f etc/greetd/config.toml ] &&

@@ -32,7 +32,6 @@ jq
 adw-gtk-theme
 reversal-red-icon-theme
 xcursor-vanilla-dmz
-xcursor-vanilla-dmz-aa
 ttf-ubuntu-font-family
 noto-fonts-ttf
 noto-fonts-emoji
