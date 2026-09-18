@@ -124,6 +124,24 @@ func TestOverviewShowsTheMark(t *testing.T) {
 	}
 }
 
+// Saying a machine has orphans is no use without saying which.
+func TestOrphansCanBeSeen(t *testing.T) {
+	m := newTestModel(t)
+	onPage(t, m, "Packages")
+	drive(t, m, key("right"), key("right")) // installed -> updates -> orphans
+	out := view(m)
+	if !strings.Contains(out, "orphans") {
+		t.Fatalf("no orphans view:\n%s", out)
+	}
+	// The demo machine has one, and it is not the same list as "installed".
+	if !strings.Contains(out, "dejavu-fonts-ttf") {
+		t.Errorf("the orphan is not named:\n%s", out)
+	}
+	if strings.Contains(out, "ghostty") {
+		t.Errorf("the orphans view lists packages that are not orphaned:\n%s", out)
+	}
+}
+
 // A machine that cannot take snapshots is not shown a snapshots page.
 func TestSnapshotsOnlyWhereTheyWork(t *testing.T) {
 	m := New(Options{}) // this machine, not the demo one

@@ -15,12 +15,13 @@ type pkgMode int
 const (
 	modeInstalled pkgMode = iota
 	modeUpdates
+	modeOrphans
 	modeSearch
 )
 
-func (p pkgMode) String() string {
-	return [...]string{"installed", "updates", "search"}[p]
-}
+var pkgViews = []string{"installed", "updates", "orphans", "search"}
+
+func (p pkgMode) String() string { return pkgViews[p] }
 
 type packagesPage struct {
 	mode      pkgMode
@@ -69,6 +70,8 @@ func (p *packagesPage) Title() (string, string) {
 	switch p.mode {
 	case modeUpdates:
 		return "Packages", "updates waiting"
+	case modeOrphans:
+		return "Packages", "installed, but nothing needs them"
 	case modeSearch:
 		return "Packages", "search the repositories"
 	default:
@@ -158,11 +161,11 @@ func (p *packagesPage) key(m *Model, key string) tea.Cmd {
 
 	switch key {
 	case "left", "h":
-		p.mode = pkgMode((int(p.mode) + 2) % 3)
+		p.mode = pkgMode((int(p.mode) + len(pkgViews) - 1) % len(pkgViews))
 		p.fill()
 		return p.detailCmd(m)
 	case "right", "l":
-		p.mode = pkgMode((int(p.mode) + 1) % 3)
+		p.mode = pkgMode((int(p.mode) + 1) % len(pkgViews))
 		p.fill()
 		return p.detailCmd(m)
 	case " ":
@@ -230,6 +233,12 @@ func (p *packagesPage) rows() []Row {
 	switch p.mode {
 	case modeUpdates:
 		list = p.updates
+	case modeOrphans:
+		for _, pkg := range p.installed {
+			if pkg.Orphan {
+				list = append(list, pkg)
+			}
+		}
 	case modeSearch:
 		list = p.found
 	default:
@@ -328,9 +337,12 @@ func describe(out string) string {
 }
 
 func (p *packagesPage) View(m *Model, width, height int) string {
-	tabs := m.tabs([]string{"installed", "updates", "search"}, int(p.mode))
-	if p.mode == modeSearch && p.table.Filtering() == "" {
+	tabs := m.tabs(pkgViews, int(p.mode))
+	switch {
+	case p.mode == modeSearch && p.table.Filtering() == "":
 		tabs += "\n\n" + m.Styles.Dim.Render("press / and type, then enter to search the repositories")
+	case p.mode == modeOrphans && len(p.table.Rows) == 0:
+		tabs += "\n\n" + m.Styles.Dim.Render("nothing is orphaned")
 	}
 	list := tabs + "\n\n" + p.table.View(m.Styles, m.Glyphs, m.listWidth(width), height-2)
 	if p.loading {
@@ -346,6 +358,8 @@ func (p *packagesPage) Help(m *Model) []Binding {
 		help = append(help, Binding{"i", "install"})
 	case modeUpdates:
 		help = append(help, Binding{"u", "update all"})
+	case modeOrphans:
+		help = append(help, Binding{"x", "remove"}, Binding{"c", "remove them all"})
 	default:
 		help = append(help, Binding{"x", "remove"}, Binding{"u", "update all"}, Binding{"c", "clean"})
 	}

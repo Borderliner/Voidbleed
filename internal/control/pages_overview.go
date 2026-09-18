@@ -72,7 +72,7 @@ func (p *overviewPage) attention(m *Model) []string {
 			itoa(m.sectionNumber("Kernels")))
 	}
 	if o.Orphans > 0 {
-		items = append(items, plural(o.Orphans, "orphan", "orphans")+" — press 2")
+		items = append(items, plural(o.Orphans, "orphan", "orphans")+" — press 2, then →")
 	}
 	// A gigabyte of downloaded packages nobody will install again is worth a
 	// mention; a few megabytes is not.
