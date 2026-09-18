@@ -130,6 +130,18 @@ check "useradd -D reports fish"                grep -q '^SHELL=/usr/bin/fish$' "
 unshare -r chroot "$t" /usr/bin/useradd -m vbprobe >/dev/null 2>&1 || true
 check "useradd creates a fish account"         grep -q '^vbprobe:.*:/usr/bin/fish$' "$t/etc/passwd"
 
+echo "no file conflicts with the NVIDIA drivers"
+xbps-query -r "$target" --repository="http://127.0.0.1:$port" "${official[@]}" -R --files voidbleed-nvidia-config \
+    >"$tmp/nvidia-config-files.txt" 2>/dev/null || true
+check "voidbleed-nvidia-config ships files"    test -s "$tmp/nvidia-config-files.txt"
+for driver in nvidia nvidia580 nvidia580-dkms; do
+    xbps-query -r "$target" --repository="http://127.0.0.1:$port" "${official[@]}" -R --files "$driver" \
+        >"$tmp/$driver-files.txt" 2>/dev/null || true
+    [ -s "$tmp/$driver-files.txt" ] || continue
+    check "no files shared with $driver" \
+        bash -c "! comm -12 <(sort '$tmp/nvidia-config-files.txt') <(sort '$tmp/$driver-files.txt') | grep -q ."
+done
+
 echo "kernel pinning with voidbleed-config installed"
 kernel="$("$root/scripts/catalog.py" kernel)"
 xi -n voidbleed-base >"$tmp/kernel.txt" 2>&1 || true
