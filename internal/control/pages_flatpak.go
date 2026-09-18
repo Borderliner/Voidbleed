@@ -307,19 +307,17 @@ func (p *flatpakPage) View(m *Model, width, height int) string {
 	return m.split(width, height, head+"\n\n"+body, detail)
 }
 
-func (p *flatpakPage) Help(m *Model) []Binding {
+func (p *flatpakPage) Help(m *Model) (nav, actions []Binding) {
 	if p.missing {
-		return []Binding{{"i", "install flatpak"}}
+		return nil, []Binding{{"i", "install flatpak"}}
 	}
-	help := []Binding{{m.Glyphs.LeftRight, "view"}}
+	nav = []Binding{{m.Glyphs.LeftRight, "view"}, {"/", "filter"}}
 	switch p.mode {
 	case fpSearch:
-		return append(help, Binding{"/", "search"}, Binding{"i", "install"})
+		return nav, []Binding{{"enter", "install"}}
 	case fpUpdates:
-		return append(help, Binding{"enter", "update one"}, Binding{"u", "update all"})
+		return nav, []Binding{{"enter", "update this"}, {"u", "update all"}}
 	}
-	return append(help,
-		Binding{"u", "update all"}, Binding{"x", "remove"}, Binding{"c", "prune"},
-		Binding{"a", map[bool]string{true: "hide runtimes", false: "show runtimes"}[p.showAll]},
-	)
+	nav = append(nav, Binding{"a", map[bool]string{true: "hide runtimes", false: "show runtimes"}[p.showAll]})
+	return nav, []Binding{{"u", "update all"}, {"x", "remove"}, {"c", "prune unused"}}
 }

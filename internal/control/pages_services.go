@@ -206,11 +206,9 @@ func (p *servicesPage) View(m *Model, width, height int) string {
 	return m.split(width, height, list, detail)
 }
 
-func (p *servicesPage) Help(m *Model) []Binding {
-	return []Binding{
-		{"e", "enable/disable"}, {"s", "start"}, {"t", "stop"}, {"R", "restart"},
-		{"o", "only enabled"}, {"/", "filter"},
-	}
+func (p *servicesPage) Help(m *Model) (nav, actions []Binding) {
+	return []Binding{{"/", "filter"}, {"o", "only enabled"}},
+		[]Binding{{"e", "enable/disable"}, {"s", "start"}, {"t", "stop"}, {"R", "restart"}}
 }
 
 func lineCount(s string) int {

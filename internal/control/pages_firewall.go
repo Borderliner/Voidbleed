@@ -196,16 +196,17 @@ func (p *firewallPage) View(m *Model, width, height int) string {
 	return m.split(width, height, body, detail)
 }
 
-func (p *firewallPage) Help(m *Model) []Binding {
+func (p *firewallPage) Help(m *Model) (nav, actions []Binding) {
 	if !p.state.Installed {
-		return []Binding{{"i", "install ufw"}}
+		return nil, []Binding{{"i", "install ufw"}}
 	}
 	if p.adding {
-		return []Binding{{"enter", "add"}, {"esc", "cancel"}}
+		return nil, []Binding{{"enter", "add"}, {"esc", "cancel"}}
 	}
 	toggle := "turn on"
 	if p.state.Active {
 		toggle = "turn off"
 	}
-	return []Binding{{"e", toggle}, {"a", "allow"}, {"x", "delete rule"}, {"d", "default policy"}}
+	return []Binding{{m.Glyphs.UpDown, "rule"}},
+		[]Binding{{"e", toggle}, {"a", "allow"}, {"x", "delete rule"}, {"d", "default policy"}}
 }

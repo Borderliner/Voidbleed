@@ -206,9 +206,10 @@ func (p *firmwarePage) View(m *Model, width, height int) string {
 	return m.split(width, height, list, detail)
 }
 
-func (p *firmwarePage) Help(m *Model) []Binding {
+func (p *firmwarePage) Help(m *Model) (nav, actions []Binding) {
 	if p.missing {
-		return []Binding{{"i", "install fwupd"}}
+		return nil, []Binding{{"i", "install fwupd"}}
 	}
-	return []Binding{{"f", "refresh"}, {"enter", "update device"}, {"u", "update all"}, {"/", "filter"}}
+	return []Binding{{"/", "filter"}},
+		[]Binding{{"f", "refresh"}, {"enter", "update device"}, {"u", "update all"}}
 }

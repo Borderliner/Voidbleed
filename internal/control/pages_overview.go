@@ -257,11 +257,11 @@ func center(width int, text string) string {
 	return lipgloss.PlaceHorizontal(width, lipgloss.Center, text)
 }
 
-func (p *overviewPage) Help(m *Model) []Binding {
+func (p *overviewPage) Help(m *Model) (nav, actions []Binding) {
 	if len(p.attention(m)) == 0 {
-		return nil
+		return nil, nil
 	}
-	return []Binding{{m.Glyphs.UpDown, "pick"}, {"enter", "open it"}}
+	return []Binding{{m.Glyphs.UpDown, "pick"}, {"enter", "open it"}}, nil
 }
 
 // sectionNumber is what to press to reach a section, since the snapshots page

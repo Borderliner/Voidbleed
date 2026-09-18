@@ -309,13 +309,13 @@ func (p *kernelsPage) View(m *Model, width, height int) string {
 	return m.split(width, height, list, detail)
 }
 
-func (p *kernelsPage) Help(m *Model) []Binding {
-	help := []Binding{{m.Glyphs.LeftRight, "view"}}
+func (p *kernelsPage) Help(m *Model) (nav, actions []Binding) {
+	nav = []Binding{{m.Glyphs.LeftRight, "view"}, {"/", "filter"}}
 	switch p.view {
 	case kernelAvailable:
-		return append(help, Binding{"enter", "install"}, Binding{"/", "filter"})
+		return nav, []Binding{{"enter", "install"}}
 	case kernelLeftovers:
-		return append(help, Binding{"enter", "remove"}, Binding{"a", "remove all"})
+		return nav, []Binding{{"enter", "remove"}, {"a", "remove all"}}
 	}
-	return append(help, Binding{"x", "remove series"})
+	return nav, []Binding{{"x", "remove series"}}
 }

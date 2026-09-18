@@ -155,9 +155,9 @@ func (p *snapshotsPage) View(m *Model, width, height int) string {
 	return m.split(width, height, body, system.SnapshotRestoreHint)
 }
 
-func (p *snapshotsPage) Help(m *Model) []Binding {
+func (p *snapshotsPage) Help(m *Model) (nav, actions []Binding) {
 	if p.naming {
-		return []Binding{{"enter", "take it"}, {"esc", "cancel"}}
+		return nil, []Binding{{"enter", "take it"}, {"esc", "cancel"}}
 	}
-	return []Binding{{"n", "new snapshot"}, {"x", "delete"}, {"/", "filter"}}
+	return []Binding{{"/", "filter"}}, []Binding{{"n", "new snapshot"}, {"x", "delete"}}
 }

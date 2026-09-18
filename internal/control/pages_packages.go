@@ -399,20 +399,20 @@ func (p *packagesPage) View(m *Model, width, height int) string {
 	return m.split(width, height, list, p.detail)
 }
 
-func (p *packagesPage) Help(m *Model) []Binding {
-	help := []Binding{{m.Glyphs.LeftRight, "view"}, {"/", "filter"}, {"space", "mark"}}
+func (p *packagesPage) Help(m *Model) (nav, actions []Binding) {
+	nav = []Binding{{m.Glyphs.LeftRight, "view"}, {"/", "filter"}, {"space", "mark"}}
 	switch p.mode {
 	case modeSearch:
-		help = append(help, Binding{"i", "install"})
+		actions = []Binding{{"enter", "install"}}
 	case modeUpdates:
-		help = append(help, Binding{"u", "update all"})
+		actions = []Binding{{"enter", "update this"}, {"u", "update all"}}
 	case modeOrphans:
-		help = append(help, Binding{"enter", "keep"}, Binding{"x", "remove"}, Binding{"c", "remove them all"})
+		actions = []Binding{{"enter", "keep"}, {"x", "remove"}, {"c", "clean up"}}
 	default:
-		help = append(help, Binding{"x", "remove"}, Binding{"k", "keep"},
-			Binding{"u", "update all"}, Binding{"c", "clean"})
+		actions = []Binding{{"x", "remove"}, {"k", "keep"}, {"u", "update all"},
+			{"s", "sync"}, {"c", "clean up"}}
 	}
-	return help
+	return nav, actions
 }
 
 // tabs draws the little row of view names each list page has.

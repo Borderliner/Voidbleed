@@ -160,15 +160,20 @@ func TestKeepingAnOrphanClearsTheFlag(t *testing.T) {
 	}
 }
 
-// The overview should not tell people which keys to press; it should take
-// them there.
+// The overview says how to deal with what it flags, and enter opens the place
+// that does it.
 func TestAttentionTakesYouThere(t *testing.T) {
 	m := newTestModel(t)
-	out := view(m)
 	// Every line says which keys deal with it, whether or not anyone uses
 	// the cursor -- and the overview itself never does any of it.
-	if !strings.Contains(out, "then u") || !strings.Contains(out, "then c") {
+	if out := view(m); !strings.Contains(out, "then u") {
 		t.Fatalf("the list does not say how to deal with what it flags:\n%s", out)
+	}
+	overview := m.pages[0].(*overviewPage)
+	for _, item := range overview.attention(m) {
+		if item.keys == "" {
+			t.Errorf("%q says nothing about how to deal with it", item.text)
+		}
 	}
 	drive(t, m, key("enter")) // the first item is the waiting updates
 	if got := m.pages[m.cur].Label(); got != "Packages" {
@@ -498,5 +503,59 @@ func TestFirmwareUpdatesEverythingWaiting(t *testing.T) {
 		if !strings.Contains(out, want) {
 			t.Errorf("the question does not mention %q:\n%s", want, out)
 		}
+	}
+}
+
+// The footer used to be one line of everything, which ran off the end of even
+// a full-screen terminal. Actions and navigation are read differently, so they
+// get a row each.
+func TestFooterSeparatesActionsFromNavigation(t *testing.T) {
+	m := newTestModel(t)
+	onPage(t, m, "Packages")
+	rows := strings.Split(m.helpLine(110), "\n")
+	if len(rows) != 2 {
+		t.Fatalf("expected an actions row and a navigation row, got %d:\n%s", len(rows), strings.Join(rows, "\n"))
+	}
+	actions, nav := rows[0], rows[1]
+
+	if !strings.Contains(actions, "remove") || !strings.Contains(actions, "clean up") {
+		t.Errorf("the actions row is missing actions:\n%s", actions)
+	}
+	if strings.Contains(actions, "section") || strings.Contains(actions, "filter") {
+		t.Errorf("navigation leaked into the actions row:\n%s", actions)
+	}
+	if !strings.Contains(nav, "filter") || !strings.Contains(nav, "section") || !strings.Contains(nav, "quit") {
+		t.Errorf("the navigation row is missing keys:\n%s", nav)
+	}
+	if strings.Contains(nav, "remove") {
+		t.Errorf("an action leaked into the navigation row:\n%s", nav)
+	}
+	// Neither row may be so long it has to be cut off.
+	for _, row := range rows {
+		if strings.Contains(row, "…") {
+			t.Errorf("a footer row was truncated at 110 columns:\n%s", row)
+		}
+	}
+}
+
+// Every page has to fit, not just the busiest one.
+func TestEveryFooterFits(t *testing.T) {
+	m := newTestModel(t)
+	for range m.pages {
+		for _, row := range strings.Split(m.helpLine(100), "\n") {
+			if strings.Contains(row, "…") {
+				t.Errorf("%s: a footer row was truncated at 100 columns:\n%s",
+					m.pages[m.cur].Label(), row)
+			}
+		}
+		drive(t, m, key("tab"))
+	}
+}
+
+// A page with nothing to do on it shows one row, not an empty one.
+func TestFooterIsOneRowWhenThereIsNothingToDo(t *testing.T) {
+	m := newTestModel(t)
+	if rows := strings.Split(m.helpLine(110), "\n"); len(rows) != 1 {
+		t.Errorf("the overview drew %d footer rows:\n%s", len(rows), strings.Join(rows, "\n"))
 	}
 }

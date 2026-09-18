@@ -55,7 +55,11 @@ type Page interface {
 	Load(m *Model) tea.Cmd
 	Update(m *Model, msg tea.Msg) tea.Cmd
 	View(m *Model, width, height int) string
-	Help(m *Model) []Binding
+	// Help returns the keys that move around the page and the keys that do
+	// something to the machine. They are drawn on separate rows: one long
+	// line of everything runs off the end of the screen, and the two kinds
+	// are not read in the same way.
+	Help(m *Model) (nav, actions []Binding)
 }
 
 type overlay int
@@ -565,30 +569,36 @@ func (m *Model) sidebar(width, height int) string {
 
 func (m *Model) helpLine(width int) string {
 	s := m.Styles
-	var bindings []Binding
+	var nav, actions []Binding
 	switch m.over {
 	case overlayOutput:
 		if m.run.running {
-			bindings = []Binding{{"ctrl+c", "stop"}}
+			nav = []Binding{{"ctrl+c", "stop"}}
 		} else {
-			bindings = []Binding{{"esc", "back"}, {m.Glyphs.UpDown, "scroll"}}
+			nav = []Binding{{"esc", "back"}, {m.Glyphs.UpDown, "scroll"}}
 		}
 	case overlayPassword:
-		bindings = []Binding{{"enter", "unlock"}, {"esc", "cancel"}}
+		nav = []Binding{{"enter", "unlock"}, {"esc", "cancel"}}
 	case overlayConfirm:
-		bindings = []Binding{{"y", "yes"}, {"n", "no"}}
+		nav = []Binding{{"y", "yes"}, {"n", "no"}}
 	case overlayQuit:
-		bindings = []Binding{{"y", "quit"}, {"n", "stay"}}
+		nav = []Binding{{"y", "quit"}, {"n", "stay"}}
 	default:
-		bindings = append(m.pages[m.cur].Help(m),
-			Binding{"tab", "section"}, Binding{"r", "reload"}, Binding{"q", "quit"})
+		nav, actions = m.pages[m.cur].Help(m)
+		nav = append(nav, Binding{"tab", "section"}, Binding{"r", "reload"}, Binding{"q", "quit"})
 	}
-	parts := make([]string, 0, len(bindings))
-	for _, b := range bindings {
-		parts = append(parts, s.Key.Render(b.Key)+" "+s.KeyDesc.Render(b.Desc))
+
+	row := func(bindings []Binding) string {
+		parts := make([]string, 0, len(bindings))
+		for _, b := range bindings {
+			parts = append(parts, s.Key.Render(b.Key)+" "+s.KeyDesc.Render(b.Desc))
+		}
+		return clipLine(strings.Join(parts, s.Dim.Render("  "+m.Glyphs.Sep+"  ")), width)
 	}
-	line := strings.Join(parts, s.Dim.Render("  "+m.Glyphs.Sep+"  "))
-	return clipLine(line, width)
+	if len(actions) == 0 {
+		return row(nav)
+	}
+	return row(actions) + "\n" + row(nav)
 }
 
 func (m *Model) outputView(width, height int) string {

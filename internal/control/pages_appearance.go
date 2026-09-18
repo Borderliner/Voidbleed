@@ -179,9 +179,7 @@ func (p *appearancePage) View(m *Model, width, height int) string {
 	return m.split(width, height, b.String(), detail)
 }
 
-func (p *appearancePage) Help(m *Model) []Binding {
-	return []Binding{
-		{m.Glyphs.UpDown, "field"}, {m.Glyphs.LeftRight, "change"},
-		{"enter", "apply"}, {"z", "undo"},
-	}
+func (p *appearancePage) Help(m *Model) (nav, actions []Binding) {
+	return []Binding{{m.Glyphs.UpDown, "field"}, {m.Glyphs.LeftRight, "change"}},
+		[]Binding{{"enter", "apply"}, {"z", "undo"}}
 }
