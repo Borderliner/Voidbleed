@@ -31,6 +31,7 @@ query xbps-query -p pkgver gthumb
 query xbps-query -p pkgver papers
 query xbps-query -p pkgver mpv
 query xbps-query -p pkgver lollypop
+query xbps-query -p pkgver voidbleed-control
 query xbps-query -p pkgver nvidia580
 query xbps-query -p pkgver linux6.18-headers
 query xbps-query -p pkgver intel-media-driver
