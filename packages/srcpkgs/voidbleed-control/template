@@ -1,20 +1,23 @@
 # Template file for 'voidbleed-control'
-# files/ is staged by scripts/build-packages.sh: the statically linked control
-# centre built from cmd/voidbleed-control, and its desktop entry.
 pkgname=voidbleed-control
-version=20260918
-revision=18
-# Only what it cannot work without. flatpak, fwupd and ufw are each optional:
-# the matching page says how to install them when they are missing.
+version=0.1.1
+revision=1
+build_style=go
+go_import_path="github.com/Borderliner/voidbleed-control"
+go_package="${go_import_path}/cmd/voidbleed-control"
+# Only what it cannot work without. flatpak, fwupd, ufw and btrfs-progs are
+# each optional: the matching section says how to install them when missing.
 depends="xbps sudo runit"
 short_desc="Voidbleed control centre: packages, services, appearance, firewall"
-maintainer="@MAINTAINER@"
+maintainer="Mohammadreza Hajianpour <hajianpour.mr@gmail.com>"
 license="MIT"
-homepage="@HOMEPAGE@"
-nostrip=yes
+homepage="https://github.com/Borderliner/voidbleed-control"
+distfiles="${homepage}/archive/refs/tags/v${version}.tar.gz"
+checksum=d486aeeba128e01bcdd17abab67866ab6c87c000b577daf1be4d9aea6dd6fe2b
 
-do_install() {
-	vlicense "${FILESDIR}/LICENSE"
-	vbin "${FILESDIR}/voidbleed-control"
-	vinstall "${FILESDIR}/voidbleed-control.desktop" 644 usr/share/applications
+post_install() {
+	vlicense LICENSE
+	# From the source tree, not files/: anyone building this from the release
+	# tarball has everything they need in it.
+	vinstall packaging/voidbleed-control.desktop 644 usr/share/applications
 }
