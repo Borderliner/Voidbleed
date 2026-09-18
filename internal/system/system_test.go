@@ -73,3 +73,39 @@ func TestParseServiceStatus(t *testing.T) {
 		}
 	}
 }
+
+func TestFirewallWithoutUfwOffersNothingToRun(t *testing.T) {
+	restore := Have
+	Have = func(name string) bool { return name == "iptables" }
+	defer func() { Have = restore }()
+
+	runner := &fakeRunner{}
+	fw := NewWith(runner, 0).FirewallState(context.Background())
+	if fw.Installed {
+		t.Error("ufw is not installed, so the page must not think it can drive one")
+	}
+	if len(fw.Others) != 1 || fw.Others[0] != "iptables" {
+		t.Errorf("iptables should be reported: %+v", fw.Others)
+	}
+	for _, line := range runner.seen {
+		if strings.Contains(line, "ufw") {
+			t.Errorf("ran a ufw command on a machine without ufw: %s", line)
+		}
+	}
+}
+func TestParseUfwStatus(t *testing.T) {
+	var fw Firewall
+	parseUfw(`Status: active
+Default: deny (incoming), allow (outgoing), disabled (routed)
+
+To                         Action      From
+--                         ------      ----
+[ 1] 22/tcp                ALLOW IN    Anywhere
+`, &fw)
+	if !fw.Active {
+		t.Error("an active firewall was read as inactive")
+	}
+	if len(fw.Rules) != 1 || fw.Rules[0].Number != "1" || fw.Rules[0].To != "22/tcp" {
+		t.Errorf("rules read as %+v", fw.Rules)
+	}
+}

@@ -101,8 +101,9 @@ func splitPkgver(pkgver string) (name, version string) {
 }
 
 // Have reports whether a program is installed, so pages for tools this
-// machine lacks can say so instead of failing.
-func Have(name string) bool {
+// machine lacks can say so instead of failing. It is a variable so tests can
+// describe a machine they are not running on.
+var Have = func(name string) bool {
 	_, err := exec.LookPath(name)
 	return err == nil
 }

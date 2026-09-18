@@ -52,6 +52,10 @@ func (p *firewallPage) Update(m *Model, msg tea.Msg) tea.Cmd {
 		}
 		p.table.SetRows(rows)
 		switch {
+		case !p.state.Installed && len(p.state.OtherEnabled) > 0:
+			m.Status(strings.Join(p.state.OtherEnabled, " and ") + " is running; ufw is not installed")
+		case !p.state.Installed && len(p.state.Others) > 0:
+			m.Status(strings.Join(p.state.Others, " and ") + " is installed but not enabled; ufw is not installed")
 		case !p.state.Installed:
 			m.Status("no firewall installed")
 		case p.state.Unknown:
@@ -142,8 +146,18 @@ func (p *firewallPage) View(m *Model, width, height int) string {
 		return m.spinner() + s.Dim.Render(" reading…")
 	}
 	if !p.state.Installed {
-		return s.Muted.Render("No firewall is installed. ufw is the one this page drives.") + "\n\n" +
-			s.Dim.Render("press i to install it, then reload with r")
+		body := s.Muted.Render("ufw is not installed, and it is the one this page drives.")
+		if len(p.state.Others) > 0 {
+			body += "\n\n" + s.Text.Render("This machine has "+strings.Join(p.state.Others, " and ")+" instead.")
+			if len(p.state.OtherEnabled) > 0 {
+				body += "\n" + s.OK.Render(m.Glyphs.Done+" "+strings.Join(p.state.OtherEnabled, " and ")+
+					" starts at boot, so the machine is not unprotected.")
+			} else {
+				body += "\n" + s.Warn.Render(m.Glyphs.Warn+" nothing is enabled: no rules are being applied at boot.")
+			}
+			body += "\n\n" + s.Dim.Render("Those are left alone here — running two firewalls at once is how people lock themselves out.")
+		}
+		return body + "\n\n" + s.Dim.Render("press i to install ufw, then reload with r")
 	}
 
 	status := s.Fail.Render(m.Glyphs.Fail + " off")

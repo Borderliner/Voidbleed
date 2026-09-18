@@ -22,9 +22,11 @@ type Firewall struct {
 	Active    bool // filtering right now
 	Policy    string
 	Rules     []FirewallRule
-	// Others names backends that are installed as well, which is worth
-	// saying out loud before anyone turns a second one on.
-	Others []string
+	// Others names the backends installed besides ufw, which is worth saying
+	// out loud before anyone turns a second one on; OtherEnabled is the ones
+	// already starting at boot.
+	Others       []string
+	OtherEnabled []string
 	// Unknown is set when the state could not be read without a password.
 	Unknown bool
 }
@@ -42,28 +44,30 @@ var firewallBackends = []string{"ufw", "nftables", "iptables"}
 // it, what is actually running.
 func (c *Client) FirewallState(ctx context.Context) Firewall {
 	fw := Firewall{}
+	// Only ufw is driven from here. The others are reported so a machine with
+	// iptables rules of its own does not look unprotected, but this page will
+	// not run ufw commands at something that is not ufw.
 	for _, name := range firewallBackends {
 		if !Have(name) {
 			continue
 		}
-		if fw.Backend == "" {
-			fw.Backend = name
+		if name == "ufw" {
+			fw.Backend, fw.Installed = name, true
 		} else {
 			fw.Others = append(fw.Others, name)
 		}
 	}
-	if fw.Backend == "" {
+	if !fw.Installed {
+		for _, name := range fw.Others {
+			if _, err := os.Lstat(filepath.Join(EnabledDir, name)); err == nil {
+				fw.OtherEnabled = append(fw.OtherEnabled, name)
+			}
+		}
 		return fw
 	}
-	fw.Installed = true
 	_, err := os.Lstat(filepath.Join(EnabledDir, fw.Backend))
 	fw.Enabled = err == nil
 
-	if fw.Backend != "ufw" {
-		// Reading nftables or iptables rules needs root and the output is
-		// not ours to interpret; say what is enabled and stop there.
-		return fw
-	}
 	out, err := c.privOutput(ctx, "ufw", "status", "verbose")
 	if err != nil && strings.TrimSpace(out) == "" {
 		fw.Unknown = true
