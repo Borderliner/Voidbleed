@@ -50,6 +50,27 @@ func TestDefaultSelectionReferenceLaptop(t *testing.T) {
 	}
 }
 
+func TestIntelGraphicsBringVulkan(t *testing.T) {
+	c := load(t)
+	// An Intel iGPU is the only display adapter in most laptops and mini PCs,
+	// and it also sits alongside the discrete card in the reference laptop.
+	igpuOnly := hw.Facts{CPU: hw.Intel, GPUs: []hw.GPU{{Vendor: hw.Intel, DeviceID: 0x9a49}}}
+	for name, f := range map[string]hw.Facts{"iGPU only": igpuOnly, "hybrid": referenceLaptop()} {
+		ids := c.DefaultSelection(f)
+		if !slices.Contains(ids, "gpu-intel") {
+			t.Errorf("%s: Intel graphics not selected: %v", name, ids)
+			continue
+		}
+		pkgs := c.Expand(ids).Packages
+		// The driver is the ICD; the loader is what applications link against.
+		for _, pkg := range []string{"mesa-vulkan-intel", "intel-media-driver"} {
+			if !slices.Contains(pkgs, pkg) {
+				t.Errorf("%s: %s missing from %v", name, pkg, pkgs)
+			}
+		}
+	}
+}
+
 func TestDefaultSelectionAMDDesktopWithRTX(t *testing.T) {
 	f := hw.Facts{CPU: hw.AMD, GPUs: []hw.GPU{{Vendor: hw.NVIDIA, DeviceID: 0x2684, NvidiaGen: hw.GenTuring}}}
 	got := load(t).DefaultSelection(f)
