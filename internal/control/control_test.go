@@ -165,8 +165,10 @@ func TestKeepingAnOrphanClearsTheFlag(t *testing.T) {
 func TestAttentionTakesYouThere(t *testing.T) {
 	m := newTestModel(t)
 	out := view(m)
-	if !strings.Contains(out, "enter to go there") {
-		t.Fatalf("the picked item does not say what enter does:\n%s", out)
+	// Every line says which keys deal with it, whether or not anyone uses
+	// the cursor -- and the overview itself never does any of it.
+	if !strings.Contains(out, "then u") || !strings.Contains(out, "then c") {
+		t.Fatalf("the list does not say how to deal with what it flags:\n%s", out)
 	}
 	drive(t, m, key("enter")) // the first item is the waiting updates
 	if got := m.pages[m.cur].Label(); got != "Packages" {
@@ -175,6 +177,27 @@ func TestAttentionTakesYouThere(t *testing.T) {
 	page := m.pages[m.cur].(*packagesPage)
 	if page.mode != modeUpdates {
 		t.Errorf("landed on the %q view, not the updates", page.mode)
+	}
+}
+
+// The overview describes; it does not change the machine. Enter opens the
+// page that deals with something, and nothing more.
+func TestOverviewNeverActs(t *testing.T) {
+	m := newTestModel(t)
+	before := len(m.Client.Run.(*demoRunner).seen)
+	for _, k := range []string{"down", "down", "down", "down", "enter"} {
+		drive(t, m, key(k))
+	}
+	if m.over == overlayConfirm {
+		t.Error("the overview asked to change something")
+	}
+	runner := m.Client.Run.(*demoRunner)
+	for _, line := range runner.seen[before:] {
+		for _, forbidden := range []string{"rm -f", "xbps-remove", "xbps-install -Sy", "xbps-pkgdb"} {
+			if strings.Contains(line, forbidden) {
+				t.Errorf("the overview ran %q", line)
+			}
+		}
 	}
 }
 

@@ -63,60 +63,69 @@ func (p *overviewPage) Update(m *Model, msg tea.Msg) tea.Cmd {
 	return nil
 }
 
-// attend is one thing worth doing something about, and the thing that does
-// it: usually opening the section that deals with it, sometimes the action
-// itself.
+// attend is one thing worth doing something about: what it is, where it is
+// dealt with, and which keys do it.
+//
+// The overview never does any of it. It is the page someone opens to see how
+// the machine is, and a page that changes things while you are reading it is
+// not that page.
 type attend struct {
 	text    string
+	keys    string // the keys that deal with it, from here
 	section string
 	view    string
-	do      func(m *Model) tea.Cmd
 }
 
 // attention is what the machine is asking for, in the order it is worth
 // dealing with.
 func (p *overviewPage) attention(m *Model) []attend {
 	o := p.info
+	// The section numbers shift when a machine has no snapshots page, so the
+	// keys are read off the sections themselves.
+	at := func(section string) string { return itoa(m.sectionNumber(section)) }
+	// "→→" is the two presses that reach the view, which "››" did not say.
+	arrow := m.Glyphs.Right
+	sep := ""
+	if m.Glyphs.ASCII {
+		sep = " " // "right right" needs the space that "→→" does not
+	}
+
 	var items []attend
 	if o.Updates > 0 {
 		items = append(items, attend{
 			text:    plural(o.Updates, "package update", "package updates") + " waiting",
+			keys:    at("Packages") + " then u",
 			section: "Packages", view: "updates",
 		})
 	}
 	if o.FlatpakUpdates > 0 {
 		items = append(items, attend{
 			text:    plural(o.FlatpakUpdates, "Flatpak update", "Flatpak updates") + " waiting",
+			keys:    at("Flatpak") + " then u",
 			section: "Flatpak", view: "updates",
 		})
 	}
 	if len(o.Stale) > 0 {
 		items = append(items, attend{
 			text:    plural(len(o.Stale), "old kernel", "old kernels") + " still in /boot",
+			keys:    at("Kernels") + " then " + arrow + sep + arrow + " a",
 			section: "Kernels", view: "in /boot",
 		})
 	}
 	if o.Orphans > 0 {
 		items = append(items, attend{
 			text:    plural(o.Orphans, "orphan", "orphans") + " nothing needs",
+			keys:    at("Packages") + " then " + arrow + sep + arrow,
 			section: "Packages", view: "orphans",
 		})
 	}
 	// A gigabyte of downloaded packages nobody will install again is worth a
 	// mention; a few megabytes is not.
 	if o.CacheBytes > 1<<30 {
-		size, orphans := o.CacheSize, o.Orphans
 		items = append(items, attend{
-			text: size + " of downloaded packages",
-			do: func(m *Model) tea.Cmd {
-				question := "Empty the download cache (" + size + ")?"
-				if orphans > 0 {
-					question = "Remove " + plural(orphans, "orphaned package", "orphaned packages") +
-						" and empty the download cache (" + size + ")?"
-				}
-				return m.Do("clean up", question+"\nCached packages are only a saved download; "+
-					"xbps fetches them again if it needs them.", true, system.CleanUpCmds()...)
-			},
+			text:    o.CacheSize + " of downloaded packages",
+			keys:    at("Packages") + " then c",
+			section: "Packages", view: "installed",
 		})
 	}
 	return items
@@ -164,10 +173,8 @@ func (p *overviewPage) key(m *Model, key string) tea.Cmd {
 	case "down", "j":
 		p.cursor = (p.cursor + 1) % len(items)
 	case "enter":
+		// Opening the page that deals with something is not doing it.
 		item := items[min(p.cursor, len(items)-1)]
-		if item.do != nil {
-			return item.do(m)
-		}
 		return m.goToView(item.section, item.view)
 	}
 	return nil
@@ -225,14 +232,11 @@ func (p *overviewPage) bodyWith(m *Model, width, limit int) string {
 				software.WriteString(s.Dim.Render("  and "+itoa(len(items)-i)+" more") + "\n")
 				break
 			}
-			line := s.Text.Render(item.text)
+			// Every line says which keys deal with it, so the page reads the
+			// same whether or not anyone uses the cursor.
+			line := s.Text.Render(item.text) + s.Dim.Render("  "+item.keys)
 			if i == picked {
-				// The picked one says what enter will do with it.
-				what := "enter to go there"
-				if item.do != nil {
-					what = "enter to do it"
-				}
-				line = s.Accent.Render(item.text) + s.Dim.Render("  "+what)
+				line = s.Accent.Render(item.text) + s.Dim.Render("  "+item.keys)
 			}
 			software.WriteString(s.Warn.Render(m.Glyphs.Bullet+" ") + line + "\n")
 		}
@@ -257,7 +261,7 @@ func (p *overviewPage) Help(m *Model) []Binding {
 	if len(p.attention(m)) == 0 {
 		return nil
 	}
-	return []Binding{{m.Glyphs.UpDown, "pick"}, {"enter", "deal with it"}}
+	return []Binding{{m.Glyphs.UpDown, "pick"}, {"enter", "open it"}}
 }
 
 // sectionNumber is what to press to reach a section, since the snapshots page

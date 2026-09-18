@@ -37,7 +37,7 @@ type GlyphSet struct {
 	Check, Uncheck, Radio, Unradio  string
 	Cursor, Arrow, Lock, Warn, Fail string
 	Bar, BarEmpty, Rule, Ellipsis   string
-	UpDown, LeftRight, Sep          string
+	UpDown, LeftRight, Right, Sep   string
 	Spinner                         []string
 	ASCII                           bool
 }
@@ -47,7 +47,7 @@ var Unicode = GlyphSet{
 	Check: "■", Uncheck: "□", Radio: "◉", Unradio: "○",
 	Cursor: "▌", Arrow: "›", Lock: "encrypted", Warn: "▲", Fail: "✗",
 	Bar: "━", BarEmpty: "━", Rule: "─", Ellipsis: "…",
-	UpDown: "↑↓", LeftRight: "←→", Sep: "•",
+	UpDown: "↑↓", LeftRight: "←→", Right: "→", Sep: "•",
 	Spinner: []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"},
 }
 
@@ -57,7 +57,7 @@ var ASCIIOnly = GlyphSet{
 	Check: "[x]", Uncheck: "[ ]", Radio: "(*)", Unradio: "( )",
 	Cursor: ">", Arrow: ">", Lock: "encrypted", Warn: "!", Fail: "x",
 	Bar: "#", BarEmpty: ".", Rule: "-", Ellipsis: "...",
-	UpDown: "up/down", LeftRight: "left/right", Sep: "|",
+	UpDown: "up/down", LeftRight: "left/right", Right: "right", Sep: "|",
 	Spinner: []string{"|", "/", "-", "\\"},
 	ASCII:   true,
 }
