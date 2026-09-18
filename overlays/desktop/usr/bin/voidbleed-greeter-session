@@ -1,0 +1,10 @@
+#!/bin/sh
+# Start the Noctalia greeter, handing the screen over from the boot splash.
+#
+# Nothing else quits plymouth on runit: it keeps the display until told to
+# stop. --retain-splash leaves the last frame on screen so the logo stays put
+# until the greeter paints over it, instead of flashing a bare console.
+if command -v plymouth >/dev/null 2>&1; then
+	plymouth quit --retain-splash >/dev/null 2>&1 || :
+fi
+exec /usr/bin/noctalia-greeter-session "$@"

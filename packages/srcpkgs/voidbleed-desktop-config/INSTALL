@@ -5,7 +5,7 @@ post)
 	install -d -m 0755 etc/skel/.local/bin
 
 	# Point greetd at the Noctalia greeter, unless it already is.
-	if ! grep -qs noctalia-greeter-session etc/greetd/config.toml; then
+	if ! grep -qs voidbleed-greeter-session etc/greetd/config.toml; then
 		[ -f etc/greetd/config.toml ] &&
 			cp -p etc/greetd/config.toml etc/greetd/config.toml.voidbleed-backup
 		install -m 0644 usr/share/voidbleed/greetd/config.toml etc/greetd/config.toml

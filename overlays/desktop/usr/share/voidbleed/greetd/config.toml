@@ -1,9 +1,9 @@
 # Voidbleed greetd config. voidbleed-desktop-config installs this as
-# /etc/greetd/config.toml unless that file already points at the Noctalia greeter.
+# /etc/greetd/config.toml unless that file already points at the Voidbleed greeter.
 
 [terminal]
 vt = 7
 
 [default_session]
-command = "/usr/bin/noctalia-greeter-session"
+command = "/usr/bin/voidbleed-greeter-session"
 user = "_greeter"

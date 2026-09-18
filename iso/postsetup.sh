@@ -16,7 +16,7 @@ command = "/usr/bin/voidbleed-session"
 user = "$LIVE_USER"
 
 [default_session]
-command = "/usr/bin/noctalia-greeter-session"
+command = "/usr/bin/voidbleed-greeter-session"
 user = "_greeter"
 CONFIG
 
