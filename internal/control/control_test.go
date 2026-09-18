@@ -99,6 +99,22 @@ func TestOverviewIsWhereItOpens(t *testing.T) {
 	}
 }
 
+// The mark is the first thing the app shows; it must survive being resized,
+// changing shape rather than disappearing.
+func TestOverviewAlwaysShowsTheMark(t *testing.T) {
+	for _, size := range [][2]int{{80, 24}, {90, 26}, {100, 30}, {120, 40}, {160, 50}} {
+		m := New(Options{Demo: true})
+		drive(t, m, tea.WindowSizeMsg{Width: size[0], Height: size[1]})
+		runCmd(t, m, m.pages[m.cur].Load(m), 0)
+		out := view(m)
+		logo := strings.Contains(out, "▄▄████████▄")
+		wordmark := strings.Contains(out, "█▀█ █ █▀▄")
+		if !logo && !wordmark {
+			t.Errorf("%dx%d shows neither the mark nor the wordmark:\n%s", size[0], size[1], out)
+		}
+	}
+}
+
 // A machine that cannot take snapshots is not shown a snapshots page.
 func TestSnapshotsOnlyWhereTheyWork(t *testing.T) {
 	m := New(Options{}) // this machine, not the demo one

@@ -128,20 +128,27 @@ func (p *overviewPage) View(m *Model, width, height int) string {
 		body.WriteString("\n" + s.OK.Render(m.Glyphs.Done+" nothing needs attention") + "\n")
 	}
 
-	// The logo only earns its place when there is room beside it, and the
-	// wordmark only when it fits on one line.
-	if width < 72 {
-		return lipgloss.NewStyle().Width(width).Height(height).Render(body.String())
+	// Branding survives every size, it just changes shape: the mark beside
+	// the facts when there is room, the wordmark above them when there is
+	// not, and nothing at all on a terminal too small for either.
+	logo, wordmark := theme.Logo(m.Glyphs), theme.Wordmark(m.Glyphs)
+	logoW, wordW := lipgloss.Width(logo), lipgloss.Width(wordmark)
+	const factsNeed = 40 // below this the facts start wrapping badly
+
+	if width-(logoW+2) >= factsNeed {
+		art, artW := s.Accent.Render(logo), logoW+2
+		if width-(wordW+2) >= factsNeed && height >= lipgloss.Height(logo)+4 {
+			art, artW = art+"\n\n"+s.Accent.Render(wordmark), wordW+2
+		}
+		return lipgloss.JoinHorizontal(lipgloss.Top,
+			lipgloss.NewStyle().Width(artW).Height(height).Render(art),
+			lipgloss.NewStyle().Width(width-artW).Height(height).Render(body.String()))
 	}
-	artW := 30
-	art := logo
-	if wordmark := theme.Wordmark(m.Glyphs); width >= 104 {
-		artW = lipgloss.Width(wordmark) + 2
-		art += "\n\n" + s.Accent.Render(wordmark)
+	if width >= wordW && height >= 14 {
+		head := lipgloss.PlaceHorizontal(width, lipgloss.Center, s.Accent.Render(wordmark))
+		return lipgloss.NewStyle().Width(width).Height(height).Render(head + "\n\n" + body.String())
 	}
-	return lipgloss.JoinHorizontal(lipgloss.Top,
-		lipgloss.NewStyle().Width(artW).Height(height).Render(art),
-		lipgloss.NewStyle().Width(width-artW).Height(height).Render(body.String()))
+	return lipgloss.NewStyle().Width(width).Height(height).Render(body.String())
 }
 
 func (p *overviewPage) Help(m *Model) []Binding { return nil }
