@@ -76,6 +76,7 @@ for k in "$root"/packages/keys/*.plist; do
     check "key $(basename "$k" .plist) installed" test -f "$t/var/db/xbps/keys/$(basename "$k")"
 done
 check "voiders repo configured"                grep -q '^repository=https://repo.voiders.dev' "$t/usr/share/xbps.d/20-voiders-community.conf"
+check "Voidbleed repo configured"              grep -q '^repository=https://void.7mm.ir/current$' "$t/usr/share/xbps.d/10-voidbleed.conf"
 check "new users default to fish"              grep -q '^SHELL=/usr/bin/fish$' "$t/etc/default/useradd"
 check "fish is a valid login shell"            grep -qx /usr/bin/fish "$t/etc/shells"
 check "vpm fish completion installed"          test -s "$t/usr/share/fish/vendor_completions.d/vpm.fish"

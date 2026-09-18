@@ -36,13 +36,16 @@ func DefaultPaths() Paths {
 }
 
 const (
-	MapperName   = "voidbleed-root"
-	VoidersRepo  = "https://repo.voiders.dev"
-	FlathubRepo  = "https://dl.flathub.org/repo/flathub.flatpakrepo"
-	espSizeMiB   = 1024
-	MinDiskBytes = 16 << 30
-	btrfsOptions = "compress=zstd:1,noatime"
-	nvidiaConfig = "voidbleed-nvidia-config"
+	MapperName  = "voidbleed-root"
+	VoidersRepo = "https://repo.voiders.dev"
+	// VoidbleedRepo carries voidbleed-control, which any Void machine can
+	// install; the ISO ships it too, so an offline install never needs this.
+	VoidbleedRepo = "https://void.7mm.ir/current"
+	FlathubRepo   = "https://dl.flathub.org/repo/flathub.flatpakrepo"
+	espSizeMiB    = 1024
+	MinDiskBytes  = 16 << 30
+	btrfsOptions  = "compress=zstd:1,noatime"
+	nvidiaConfig  = "voidbleed-nvidia-config"
 	// FirstbootFlatpaks lists Flathub apps voidbleed-firstboot installs once
 	// the installed system is online.
 	FirstbootFlatpaks = "var/lib/voidbleed/firstboot-flatpaks"
@@ -187,7 +190,7 @@ func (p *Plan) Repositories() []string {
 	if slices.Contains(p.Selection.Repos, "nonfree") {
 		repos = append(repos, mirror+"/current/nonfree")
 	}
-	repos = append(repos, VoidersRepo)
+	repos = append(repos, VoidersRepo, VoidbleedRepo)
 	args := make([]string, len(repos))
 	for i, r := range repos {
 		args[i] = "--repository=" + r

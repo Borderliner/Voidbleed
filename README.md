@@ -110,9 +110,14 @@ groups = ["gpu-nvidia", "flatpak", "firefox"]
 
 ## The control centre
 
-`voidbleed-control` is the other half: one interface for what a Void machine
-otherwise needs a page of remembered commands for. Same palette, same glyphs,
-same card as the installer.
+[`voidbleed-control`](https://github.com/Borderliner/voidbleed-control) is the
+other half: one interface for what a Void machine otherwise needs a page of
+remembered commands for. Same palette, same glyphs, same card as the installer.
+It lives in its own repository, because it works on any Void system:
+
+```sh
+sudo xbps-install -S --repository=https://void.7mm.ir/current voidbleed-control
+```
 
 | Section | What it does |
 |---|---|
@@ -131,6 +136,9 @@ removals and firmware ask before they start.
 voidbleed-control          # manage this machine
 voidbleed-control --demo   # the whole interface against canned data, changing nothing
 ```
+
+Voidbleed installs it as part of the desktop, and points at
+[void.7mm.ir](https://void.7mm.ir) so it updates with everything else.
 
 ## Build it
 
