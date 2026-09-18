@@ -10,9 +10,9 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
 
-	"voidbleed/installer/internal/catalog"
-	"voidbleed/installer/internal/config"
-	"voidbleed/installer/internal/hw"
+	"voidbleed/internal/catalog"
+	"voidbleed/internal/config"
+	"voidbleed/internal/hw"
 )
 
 type Options struct {

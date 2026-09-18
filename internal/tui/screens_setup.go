@@ -8,8 +8,8 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 
-	"voidbleed/installer/internal/engine"
-	"voidbleed/installer/internal/hw"
+	"voidbleed/internal/engine"
+	"voidbleed/internal/hw"
 )
 
 // ── Welcome ─────────────────────────────────────────────────────────────────

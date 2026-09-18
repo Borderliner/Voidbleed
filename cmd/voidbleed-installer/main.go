@@ -14,12 +14,12 @@ import (
 	"syscall"
 	"time"
 
-	"voidbleed/installer/internal/catalog"
-	"voidbleed/installer/internal/config"
-	"voidbleed/installer/internal/engine"
-	"voidbleed/installer/internal/hw"
-	"voidbleed/installer/internal/sys"
-	"voidbleed/installer/internal/tui"
+	"voidbleed/internal/catalog"
+	"voidbleed/internal/config"
+	"voidbleed/internal/engine"
+	"voidbleed/internal/hw"
+	"voidbleed/internal/sys"
+	"voidbleed/internal/tui"
 )
 
 func main() {

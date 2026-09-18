@@ -10,17 +10,17 @@ import (
 	"strings"
 	"testing"
 
-	"voidbleed/installer/internal/catalog"
-	"voidbleed/installer/internal/config"
-	"voidbleed/installer/internal/hw"
-	"voidbleed/installer/internal/sys"
+	"voidbleed/internal/catalog"
+	"voidbleed/internal/config"
+	"voidbleed/internal/hw"
+	"voidbleed/internal/sys"
 )
 
 var update = flag.Bool("update", false, "rewrite golden transcripts")
 
 func loadCatalog(t *testing.T) *catalog.Catalog {
 	t.Helper()
-	c, err := catalog.Load("../../../catalog")
+	c, err := catalog.Load("../../catalog")
 	if err != nil {
 		t.Fatal(err)
 	}

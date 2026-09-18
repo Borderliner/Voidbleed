@@ -12,9 +12,9 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
 
-	"voidbleed/installer/internal/config"
-	"voidbleed/installer/internal/engine"
-	"voidbleed/installer/internal/sys"
+	"voidbleed/internal/config"
+	"voidbleed/internal/engine"
+	"voidbleed/internal/sys"
 )
 
 func ansi_truncate(s string, width int, tail string) string { return ansi.Truncate(s, width, tail) }

@@ -123,7 +123,7 @@ scripts/qemu-test.sh                   # boot the newest ISO, UEFI + KVM + virgl
 
 ```sh
 scripts/catalog.py validate            # catalog, templates and repositories agree
-cd installer && go test ./...          # engine golden transcripts, TUI walkthroughs, hardware rules
+go test ./...                          # engine golden transcripts, TUI walkthroughs, hardware rules
 scripts/test-repo.sh                   # install the packages in a scratch root and check the result
 scripts/vm-install-test.py --config install.toml     # a real install in QEMU, then boot the disk
 scripts/vm-install-test.py --live-script scripts/live-splash-check.sh --shot-every 6   # render the splash in a live VM
@@ -155,7 +155,7 @@ the ISO, the installed system and the tests cannot drift apart.
 | `packages/srcpkgs/` | xbps-src templates for the `voidbleed-*` packages |
 | `packages/fallback/` | Unbuilt templates, in case the voiders repo disappears |
 | `iso/` | Live ISO: package groups, live-only files, postsetup hook |
-| `installer/` | The installer — engine, TUI, unattended CLI (Go) |
+| `cmd/`, `internal/` | The Go programs: the installer's engine, TUI and CLI |
 | `scripts/` | Catalog checks, package and ISO builds, repo tests, QEMU harnesses |
 | `docs/` | Branding and per-phase notes |
 

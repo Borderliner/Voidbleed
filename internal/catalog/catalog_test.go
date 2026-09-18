@@ -5,14 +5,14 @@ import (
 	"strings"
 	"testing"
 
-	"voidbleed/installer/internal/hw"
+	"voidbleed/internal/hw"
 )
 
 // Tests run against the real catalog so a catalog edit that breaks the
 // installer's assumptions fails here.
 func load(t *testing.T) *Catalog {
 	t.Helper()
-	c, err := Load("../../../catalog")
+	c, err := Load("../../catalog")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -1,6 +1,6 @@
 # Phase 4 — installer engine
 
-Go module in `installer/`, no C dependencies, built statically.
+One Go module at the repository root, no C dependencies, built statically.
 
 ```
 internal/config    what to install; TOML for unattended installs

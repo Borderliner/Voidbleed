@@ -11,9 +11,9 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 
-	"voidbleed/installer/internal/config"
-	"voidbleed/installer/internal/hw"
-	"voidbleed/installer/internal/sys"
+	"voidbleed/internal/config"
+	"voidbleed/internal/hw"
+	"voidbleed/internal/sys"
 )
 
 // Run starts the interactive installer.

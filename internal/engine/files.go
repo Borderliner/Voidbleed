@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"voidbleed/installer/internal/config"
+	"voidbleed/internal/config"
 )
 
 // fstab renders /etc/fstab. uuids maps device path to filesystem UUID.

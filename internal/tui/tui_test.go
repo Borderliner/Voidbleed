@@ -7,15 +7,15 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 
-	"voidbleed/installer/internal/catalog"
-	"voidbleed/installer/internal/config"
+	"voidbleed/internal/catalog"
+	"voidbleed/internal/config"
 )
 
 func testState(t *testing.T) *state {
 	t.Helper()
 	// Use the built-in lists so tests don't depend on the host's data files.
 	xkbRulesFile, libcLocalesFile, zoneinfoDir = "/nonexistent", "/nonexistent", "/nonexistent"
-	cat, err := catalog.Load("../../../catalog")
+	cat, err := catalog.Load("../../catalog")
 	if err != nil {
 		t.Fatal(err)
 	}

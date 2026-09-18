@@ -13,7 +13,7 @@ import (
 
 	"github.com/BurntSushi/toml"
 
-	"voidbleed/installer/internal/hw"
+	"voidbleed/internal/hw"
 )
 
 const DefaultDir = "/usr/share/voidbleed/catalog"

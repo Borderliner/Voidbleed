@@ -1,4 +1,4 @@
-module voidbleed/installer
+module voidbleed
 
 go 1.27.1
 

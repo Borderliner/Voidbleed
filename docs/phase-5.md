@@ -1,6 +1,6 @@
 # Phase 5 — installer interface
 
-`installer/internal/tui`, built with Bubble Tea v2 and Lip Gloss v2.
+`internal/tui`, built with Bubble Tea v2 and Lip Gloss v2.
 
 Screens: Welcome, Keyboard, Language, Time zone, Disk, Storage, Account,
 Software, Source, Review, Install. A sidebar shows progress through them;

@@ -81,7 +81,7 @@ stage() {
             ;;
         voidbleed-installer)
             log "building the installer binary"
-            (cd "$root/installer" && CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" \
+            (cd "$root" && CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" \
                 -o "$dest/files/voidbleed-installer" ./cmd/voidbleed-installer)
             cp -a "$root/catalog" "$dest/files/catalog"
             ;;

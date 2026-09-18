@@ -7,9 +7,9 @@ import (
 	"slices"
 	"strings"
 
-	"voidbleed/installer/internal/catalog"
-	"voidbleed/installer/internal/config"
-	"voidbleed/installer/internal/hw"
+	"voidbleed/internal/catalog"
+	"voidbleed/internal/config"
+	"voidbleed/internal/hw"
 )
 
 // Paths are locations on the live system and the target mount point.

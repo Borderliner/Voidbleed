@@ -9,9 +9,9 @@ import (
 	"strconv"
 	"strings"
 
-	"voidbleed/installer/internal/config"
-	"voidbleed/installer/internal/hw"
-	"voidbleed/installer/internal/sys"
+	"voidbleed/internal/config"
+	"voidbleed/internal/hw"
+	"voidbleed/internal/sys"
 )
 
 // Step is one unit of the install shown in the progress view.

@@ -10,7 +10,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 
-	"voidbleed/installer/internal/config"
+	"voidbleed/internal/config"
 )
 
 // ── Storage ─────────────────────────────────────────────────────────────────
