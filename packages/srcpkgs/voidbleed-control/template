@@ -3,7 +3,7 @@
 # centre built from cmd/voidbleed-control, and its desktop entry.
 pkgname=voidbleed-control
 version=20260918
-revision=5
+revision=6
 # Only what it cannot work without. flatpak, fwupd and ufw are each optional:
 # the matching page says how to install them when they are missing.
 depends="xbps sudo runit"
