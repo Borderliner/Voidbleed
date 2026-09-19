@@ -126,6 +126,7 @@ sudo xbps-install -S --repository=https://void.7mm.ir/current voidbleed-control
 | **Services** | every runit service, enabled or not, with live state; enable, disable, start, stop, restart |
 | **Firmware** | fwupd devices and the updates waiting for them, with the version spelled out before anything is written |
 | **Appearance** | GTK, Qt, icons, cursor and fonts set together — written to gsettings *and* the toolkit files, because the portal reads one and everything else reads the other |
+| **Defaults** | which application opens what — web pages, PDFs, pictures, music, video, archives — set for every MIME type the name stands for, and it says whether the choice is yours, the system's, or nobody's |
 | **Firewall** | ufw: on or off, default policy, and the rule list |
 
 Reading is unprivileged. Anything that changes the machine names itself, asks

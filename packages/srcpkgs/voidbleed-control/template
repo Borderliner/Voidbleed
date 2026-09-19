@@ -1,6 +1,6 @@
 # Template file for 'voidbleed-control'
 pkgname=voidbleed-control
-version=0.1.1
+version=0.2.0
 revision=1
 build_style=go
 go_import_path="github.com/Borderliner/voidbleed-control"
@@ -13,7 +13,7 @@ maintainer="Mohammadreza Hajianpour <hajianpour.mr@gmail.com>"
 license="MIT"
 homepage="https://github.com/Borderliner/voidbleed-control"
 distfiles="${homepage}/archive/refs/tags/v${version}.tar.gz"
-checksum=d486aeeba128e01bcdd17abab67866ab6c87c000b577daf1be4d9aea6dd6fe2b
+checksum=476422aaf432c0c83448114da9a4567eac3b3ac19ac33ba77465ac0ac7662974
 
 post_install() {
 	vlicense LICENSE
