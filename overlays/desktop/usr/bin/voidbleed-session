@@ -5,9 +5,8 @@
 # niri's own entry ("dbus-run-session niri --session") can lose its wrapper and
 # niri then hangs in dbus-launch --autolaunch with no bus to talk to.
 #
-# A session can also start without the greeter (the live ISO logs straight in,
-# or someone starts niri from a tty), so release the boot splash here too.
-if command -v plymouth >/dev/null 2>&1; then
-	plymouth quit --retain-splash >/dev/null 2>&1 || :
-fi
+# The boot splash is not this script's to release: plymouthd answers root and
+# nobody else, so greetd's service script quits it before the greeter starts.
+# A session started straight from a tty leaves plymouthd running until a root
+# "plymouth quit" -- harmless, since the compositor takes the display anyway.
 exec dbus-run-session niri --session

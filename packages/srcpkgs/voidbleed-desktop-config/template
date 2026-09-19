@@ -2,7 +2,7 @@
 # files/overlay is staged from overlays/desktop by scripts/build-packages.sh.
 pkgname=voidbleed-desktop-config
 version=20260916
-revision=10
+revision=11
 depends="greetd noctalia-greeter polkit pipewire wireplumber alsa-pipewire"
 short_desc="Voidbleed desktop defaults for niri, Noctalia and Ghostty"
 maintainer="@MAINTAINER@"

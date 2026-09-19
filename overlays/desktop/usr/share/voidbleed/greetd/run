@@ -1,0 +1,18 @@
+#!/bin/sh
+# greetd's runit service, with the boot splash released first.
+#
+# voidbleed-desktop-config installs this as /etc/sv/greetd/run. The splash has
+# to be stopped from here because plymouthd takes orders from root and nobody
+# else: the greeter runs as _greeter, so a "plymouth quit" inside the session
+# is answered with silence and plymouthd stays up for the life of the machine,
+# holding the boot console in graphics mode.
+#
+# --retain-splash leaves the last frame where it is, so the screen keeps the
+# logo until the greeter paints over it instead of flashing a bare console.
+exec 2>&1
+
+if command -v plymouth >/dev/null 2>&1; then
+	plymouth quit --retain-splash >/dev/null 2>&1 || :
+fi
+
+exec greetd

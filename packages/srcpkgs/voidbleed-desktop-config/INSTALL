@@ -11,6 +11,17 @@ post)
 		install -m 0644 usr/share/voidbleed/greetd/config.toml etc/greetd/config.toml
 	fi
 
+	# greetd's service script, which quits the boot splash before starting the
+	# greeter. plymouthd only listens to root and the greeter runs as _greeter,
+	# so this is the one place the quit lands. greetd owns the path but does not
+	# treat it as a configuration file: a greetd update restores the stock
+	# script, and reconfiguring this package puts ours back.
+	if [ -d etc/sv/greetd ] && ! grep -qs plymouth etc/sv/greetd/run; then
+		[ -f etc/sv/greetd/run ] &&
+			cp -p etc/sv/greetd/run etc/sv/greetd/run.voidbleed-backup
+		install -m 0755 usr/share/voidbleed/greetd/run etc/sv/greetd/run
+	fi
+
 	# First-run greeter setup (greeter.toml/sync.toml owned by _greeter). The
 	# upstream PAM patch is not needed on Void: system-login runs pam_elogind.
 	install -d -m 0750 var/lib/noctalia-greeter
