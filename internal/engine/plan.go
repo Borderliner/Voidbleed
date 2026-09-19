@@ -38,9 +38,11 @@ func DefaultPaths() Paths {
 const (
 	MapperName  = "voidbleed-root"
 	VoidersRepo = "https://repo.voiders.dev"
-	// VoidbleedRepo carries voidbleed-control, which any Void machine can
-	// install; the ISO ships it too, so an offline install never needs this.
-	VoidbleedRepo = "https://void.7mm.ir/current"
+	// VoidbleedRepo carries every voidbleed-* package, and is what the
+	// installed system points at for updates; the ISO ships them too, so an
+	// offline install never needs this. https://void.7mm.ir/current is the
+	// smaller public repository, for Void machines that are not Voidbleed.
+	VoidbleedRepo = "https://void.7mm.ir/voidbleed"
 	FlathubRepo   = "https://dl.flathub.org/repo/flathub.flatpakrepo"
 	espSizeMiB    = 1024
 	MinDiskBytes  = 16 << 30

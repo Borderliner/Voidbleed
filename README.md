@@ -140,6 +140,20 @@ voidbleed-control --demo   # the whole interface against canned data, changing n
 Voidbleed installs it as part of the desktop, and points at
 [void.7mm.ir](https://void.7mm.ir) so it updates with everything else.
 
+## The repositories
+
+[void.7mm.ir](https://void.7mm.ir) serves two signed repositories, both from
+the key `3e:24:c6:9c:fb:c2:56:c5:71:fb:8e:fb:a9:08:87:56`:
+
+| | |
+|---|---|
+| `/current` | the control centre and the boot splash — what any Void machine can use, and what other people add |
+| `/voidbleed` | every package the ISO is built from, config packages included; `10-voidbleed.conf` points installed machines here, so a fix to a config package reaches them without waiting for the next image |
+
+The split keeps `voidbleed-config` — which rebrands a machine and pins its
+kernel — out of reach of a passing Void user who is only after one tool.
+`scripts/publish-repo.sh` builds and signs both, then uploads them.
+
 ## Build it
 
 Needs a Void machine with `xbps-src` dependencies, `qemu-system-amd64` and
@@ -150,6 +164,7 @@ Needs a Void machine with `xbps-src` dependencies, `qemu-system-amd64` and
 scripts/build-packages.sh              # build every voidbleed-* package into build/repo, signed
 sudo scripts/build-iso.sh --fast       # live ISO into build/ (lz4; drop --fast for a smaller xz image)
 scripts/qemu-test.sh                   # boot the newest ISO, UEFI + KVM + virgl, in a window
+scripts/publish-repo.sh                # sign both repositories and upload them to void.7mm.ir
 ```
 
 ## Test it

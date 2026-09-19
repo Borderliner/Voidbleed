@@ -145,7 +145,7 @@ printf '%s\n' "${groups[@]}" >"$generated/usr/share/voidbleed/live-groups.txt"
     "${compression[@]}" \
     -r "$repo" \
     -r https://repo.voiders.dev \
-    -r https://void.7mm.ir/current \
+    -r https://void.7mm.ir/voidbleed \
     -p "${packages[*]}" \
     -S "${services[*]}" \
     -I "$root/iso/include" \
